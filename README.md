@@ -284,17 +284,14 @@ Internal tool - Not for public distribution
 
 ## 👥 Contact
 
-- Developer: [Tên của bạn]
-- Backend API: Xem file `full-be.txt`
+- Developer: MINH NHAT LUONG
 - UI Reference: Xem các ảnh trong project
 
 ---
 
 **Phiên bản**: 1.1.0  
 **Ngày cập nhật**: 31/10/2025
-
 ## 🆕 Changelog
-
 ### Version 1.1.0 (31/10/2025)
 - ✨ Thêm tính năng "Gia hạn hợp đồng" (Tab 4)
 - 🔄 Tích hợp API `POST /api/contracts/create-renew`
