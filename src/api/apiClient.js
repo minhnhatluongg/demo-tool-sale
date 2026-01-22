@@ -1,9 +1,12 @@
 import axios from "axios";
 
 // Direct connection to CMS backend
-const baseURL = process.env.NODE_ENV === 'production'
-  ? 'https://cms.wininvoice.vn/api'  // Direct to CMS backend
-  : 'http://localhost:44344/api';     // Local development
+// const baseURL = process.env.NODE_ENV === 'production'
+//   ? 'https://cms.wininvoice.vn/api'  
+//   : 'http://localhost:44344/api';     
+
+//Test thì mở ra - dưới local
+const baseURL = '';
 
 const api = axios.create({
   baseURL,
@@ -11,15 +14,5 @@ const api = axios.create({
     "Content-Type": "application/json",
   },
 });
-
-// Add Basic Authentication if needed
-// Uncomment and update credentials if backend requires authentication
-// api.interceptors.request.use((config) => {
-//   const username = 'admin';
-//   const password = 'admin';
-//   const basicAuth = btoa(`${username}:${password}`);
-//   config.headers['Authorization'] = `Basic ${basicAuth}`;
-//   return config;
-// });
 
 export default api;
