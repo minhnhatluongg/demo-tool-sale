@@ -45,8 +45,9 @@ export interface FullInfoResponse {
   oDate?: string;
   cusDes?: string;
   CusContactName?: string;
+  cusPosition? : string,
   cusPeopleSign?: string; // Đại diện công ty (backend trả về field này)
-  cusPosition?: string; // Chức vụ người đại diện
+  cusPeople_Sign?: string; // Chức vụ người đại diện
   isToKhai?: boolean; // Tờ khai đã được duyệt hay chưa
   contractRange?: ContractRange | null;
   samples: Sample[];

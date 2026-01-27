@@ -2,18 +2,24 @@
 @tailwind components;
 @tailwind utilities;
 
+@import './styles/animations.css';
+
 @layer utilities {
+
   /* Blob animation for background decorations */
   @keyframes blob {
     0% {
       transform: translate(0px, 0px) scale(1);
     }
+
     33% {
       transform: translate(30px, -50px) scale(1.1);
     }
+
     66% {
       transform: translate(-20px, 20px) scale(0.9);
     }
+
     100% {
       transform: translate(0px, 0px) scale(1);
     }
@@ -33,13 +39,24 @@
 
   /* Shake animation for error messages */
   @keyframes shake {
-    0%, 100% {
+
+    0%,
+    100% {
       transform: translateX(0);
     }
-    10%, 30%, 50%, 70%, 90% {
+
+    10%,
+    30%,
+    50%,
+    70%,
+    90% {
       transform: translateX(-10px);
     }
-    20%, 40%, 60%, 80% {
+
+    20%,
+    40%,
+    60%,
+    80% {
       transform: translateX(10px);
     }
   }
@@ -48,4 +65,3 @@
     animation: shake 0.5s;
   }
 }
-
