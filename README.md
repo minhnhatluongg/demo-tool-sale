@@ -82,7 +82,7 @@ src/
 
 ## 🤝 Contributing
 
-Đây là project học tập, feel free to modify và experiment!
+Đây là project học tập, feel free to modify và experiment, vibe coding !
 
 ## 📄 License
 

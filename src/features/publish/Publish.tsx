@@ -53,8 +53,6 @@ const Publish: React.FC = () => {
         setAdjustConfig,
         logoFileName,
         backgroundFileName,
-        customerType,
-        setCustomerType,
     } = usePublish();
 
     // Set userCode from logged in user
@@ -190,8 +188,6 @@ const Publish: React.FC = () => {
                                     onAdjustConfigChange={setAdjustConfig}
                                     logoFileName={logoFileName}
                                     backgroundFileName={backgroundFileName}
-                                    customerType={customerType}
-                                    onCustomerTypeChange={setCustomerType}
                                 />
                             </div>
                         )}
