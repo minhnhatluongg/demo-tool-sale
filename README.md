@@ -1,6 +1,6 @@
 # 🎯 Demo Tool Sale - React Learning Project
 
-> Dự án học React.js với Authentication Flow và Modern UI
+> Dự án học React.js với Authentication Flow và Modern UI, VibeCoding :D
 
 ## 🚀 Quick Start
 
@@ -13,7 +13,8 @@ npm start
 ```
 
 Ứng dụng sẽ mở tại: **http://localhost:3000**
-
+## PRODUCT 
+#LINK : https://winsale.wininvoice.vn
 ## 📚 Tài Liệu Chi Tiết
 
 Xem file [SETUP_GUIDE.md](./SETUP_GUIDE.md) để biết:
@@ -68,10 +69,11 @@ src/
 ## 🎨 Screenshots
 
 ### Login Page
-![Login](docs/login-preview.png)
+<img width="1920" height="1032" alt="image" src="https://github.com/user-attachments/assets/b6a0394e-d600-45fe-acd6-9c006965f8b0" />
 
 ### Dashboard
-![Dashboard](docs/dashboard-preview.png)
+<img width="1920" height="1032" alt="image" src="https://github.com/user-attachments/assets/585b226a-67f5-4b91-a3cf-4459ccb6597a" />
+
 
 ## 📝 TODO
 
