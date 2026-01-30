@@ -58,9 +58,6 @@ export const usePublish = () => {
     const [isOwner, setIsOwner] = useState(true);
     const [ownerUserCode, setOwnerUserCode] = useState("");
 
-    // Customer type: 'new' or 'existing'
-    const [customerType, setCustomerType] = useState<'new' | 'existing'>('new');
-
 
     // Adjust config
     const [adjustConfig, setAdjustConfig] = useState({
@@ -570,8 +567,9 @@ export const usePublish = () => {
                 factorId = "EXPOR_INVCVCNB"; // Hóa đơn VCNB
             }
 
-            // Xác định sampleId dựa trên loại khách hàng
-            const sampleId = customerType === 'new' ? 'NEW' : selectedTemplate;
+            // 🔧 FIX: Luôn sử dụng 'NEW' cho sampleId (không còn chọn loại khách hàng)
+            const sampleId = 'NEW';
+            console.log(`🔍 sampleId: ${sampleId} (Always NEW)`);
 
             // Clean và encode configuredXslt
             const cleanedXslt = configuredXslt.replace(/[\t\n]/g, "");
@@ -674,9 +672,8 @@ export const usePublish = () => {
                 invSample: selectedContract?.invcSample || companyData.invcSample || "",
                 invSign: selectedContract?.invcSign || companyData.invcSign || "",
 
-                // Thêm 3 trường mới
-                customerType: customerType,  // 'new' hoặc 'existing'
-                sampleId: sampleId,          // 'NEW' hoặc templateId
+                // Thêm 2 trường mới (customerType đã bỏ)
+                sampleId: sampleId,          // Luôn là 'NEW'
                 factorId: factorId           // 'EXPOR_GOODSINVC' hoặc 'EXPOR_INVCVCNB'
             };
 
@@ -740,8 +737,6 @@ export const usePublish = () => {
         submitPublish,
         isOwner,
         ownerUserCode,
-        customerType,
-        setCustomerType,
         updateCompanyData,
         handleLogoUpload,
         handleBackgroundUpload,

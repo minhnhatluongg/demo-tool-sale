@@ -31,8 +31,6 @@ interface InvoiceActionsProps {
     backgroundFileName?: string;
     onRemoveLogo?: () => void;
     onRemoveBackground?: () => void;
-    customerType?: 'new' | 'existing';
-    onCustomerTypeChange?: (type: 'new' | 'existing') => void;
 }
 
 const InvoiceActions: React.FC<InvoiceActionsProps> = ({
@@ -55,21 +53,12 @@ const InvoiceActions: React.FC<InvoiceActionsProps> = ({
     backgroundFileName,
     onRemoveLogo,
     onRemoveBackground,
-    customerType = 'new',
-    onCustomerTypeChange,
 }) => {
     const { isDark } = useTheme();
     const [isConfigOpen, setIsConfigOpen] = useState(false);
     const [isBorderLibraryOpen, setIsBorderLibraryOpen] = useState(false);
     const [xmlFileName, setXmlFileName] = useState('');
     const [xsltFileName, setXsltFileName] = useState('');
-
-    // Available border images from CDN
-    const availableBorders = [
-        'vien1.png', 'vien2.png', 'vien3.png', 'vien4.png', 'vien5.png',
-        'vien6.png', 'vien7.png', 'vien8.png', 'vien9.png', 'vien10.png',
-        'vien11.png', 'vien12.png', 'vien13.png', 'vien14.png', 'vien15.png',
-    ];
 
     const getButtonClass = (color: string, disabled: boolean = false) => {
         if (disabled) {
@@ -141,49 +130,6 @@ const InvoiceActions: React.FC<InvoiceActionsProps> = ({
                     }`}>
                     🎬 Thao tác
                 </h3>
-
-                {/* Customer Type Selection */}
-                <div className={`mb-6 p-4 rounded-lg border-2 ${isDark
-                    ? 'bg-slate-700/50 border-blue-600'
-                    : 'bg-blue-50 border-blue-300'
-                    }`}>
-                    <label className={`block text-sm font-semibold mb-3 ${isDark ? 'text-blue-300' : 'text-blue-800'}`}>
-                        👤 Loại khách hàng
-                    </label>
-                    <div className="flex gap-6">
-                        <label className="flex items-center gap-2 cursor-pointer group">
-                            <input
-                                type="radio"
-                                name="customerType"
-                                value="new"
-                                checked={customerType === 'new'}
-                                onChange={() => onCustomerTypeChange?.('new')}
-                                className="w-4 h-4 text-blue-600 focus:ring-2 focus:ring-blue-500 cursor-pointer"
-                            />
-                            <span className={`text-sm font-medium group-hover:text-blue-600 transition-colors ${isDark ? 'text-gray-200' : 'text-gray-700'
-                                }`}>
-                                🆕 Khách hàng mới (SampleID = NEW)
-                            </span>
-                        </label>
-                        <label className="flex items-center gap-2 cursor-pointer group">
-                            <input
-                                type="radio"
-                                name="customerType"
-                                value="existing"
-                                checked={customerType === 'existing'}
-                                onChange={() => onCustomerTypeChange?.('existing')}
-                                className="w-4 h-4 text-blue-600 focus:ring-2 focus:ring-blue-500 cursor-pointer"
-                            />
-                            <span className={`text-sm font-medium group-hover:text-blue-600 transition-colors ${isDark ? 'text-gray-200' : 'text-gray-700'
-                                }`}>
-                                👥 Khách hàng cũ (SampleID = TemplateID)
-                            </span>
-                        </label>
-                    </div>
-                    <p className={`text-xs mt-2 ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>
-                        💡 Chọn "Khách hàng mới" nếu đây là lần đầu phát hành mẫu, hoặc "Khách hàng cũ" nếu đổi mẫu.
-                    </p>
-                </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                     {/* Config Template Button */}
