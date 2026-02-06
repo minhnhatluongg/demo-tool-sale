@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, use } from 'react';
 import { SuccessModal } from './login-material';
 import { ErrorModal } from './login-material';
 import { LoginForm } from './login-material';
@@ -10,6 +10,7 @@ import { useNavigate } from 'react-router-dom';
 import './login-material/animations.css';
 import { useAuth } from '../contexts/AuthContext';
 import { useTheme } from '../contexts/ThemeContext';
+import RegisterSaleModal from '../features/register-account-sale/components/Register-Sale';
 
 const Login = () => {
   const [formData, setFormData] = useState({
@@ -24,6 +25,7 @@ const Login = () => {
   const [showSuccess, setShowSuccess] = useState(false);
   const { isDark, toggleTheme } = useTheme();
   const [mounted, setMounted] = useState(false);
+  const [isRegisterOpen,setIsRegisterOpen] = useState(false);
   const { login } = useAuth();
   useEffect(() => {
     setMounted(true);
@@ -73,7 +75,10 @@ const Login = () => {
         onClose={() => setError('')}
         isDark={isDark}
       />
-
+      <RegisterSaleModal
+        visible={isRegisterOpen}
+        onClose={() => setIsRegisterOpen(false)}
+      />
       {/* Animated Background Elements */}
       <BackgroundElements isDark={isDark} />
 
@@ -96,6 +101,7 @@ const Login = () => {
           isLoading={isLoading}
           onSubmit={handleSubmit}
           isDark={isDark}
+          onOpenRegister={() => setIsRegisterOpen(true)}
         />
       </div>
     </div>

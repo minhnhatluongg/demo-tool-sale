@@ -17,6 +17,7 @@ interface LoginFormProps {
   isLoading: boolean;
   onSubmit: (e: React.MouseEvent<HTMLButtonElement>) => void;
   isDark: boolean;
+  onOpenRegister: () => void;
 }
 
 const LoginForm: React.FC<LoginFormProps> = ({
@@ -27,7 +28,8 @@ const LoginForm: React.FC<LoginFormProps> = ({
   error,
   isLoading,
   onSubmit,
-  isDark
+  isDark,
+  onOpenRegister
 }) => {
   return (
     <Card
@@ -164,7 +166,20 @@ const LoginForm: React.FC<LoginFormProps> = ({
             {isLoading ? 'Đang xử lý...' : 'Đăng Nhập'}
           </button>
         </div>
-        
+        <div className="mt-6 text-center">
+          <p className={`text-sm ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>
+              Chưa có tài khoản? {' '}
+              <button
+              type='button'
+              onClick={onOpenRegister}
+              className={`font-semibold transition-colors underline-offset-4 hover:underline 
+                ${isDark ? 
+              'text-purple-400 hover:text-purple-300' : 
+              'text-blue-600 hover:text-blue-700'}`}>
+                Đăng ký nhân sự ngay
+              </button>
+          </p>
+        </div>
         <div className={`mt-8 pt-6 border-t text-center text-xs ${
           isDark ? 'border-slate-700 text-gray-500' : 'border-gray-200 text-gray-500'
         }`}>
