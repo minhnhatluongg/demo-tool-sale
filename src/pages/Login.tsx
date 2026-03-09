@@ -1,4 +1,4 @@
-import React, { useState, useEffect, use } from 'react';
+import React, { useState, useEffect } from 'react';
 import { SuccessModal } from './login-material';
 import { ErrorModal } from './login-material';
 import { LoginForm } from './login-material';
@@ -6,7 +6,7 @@ import { LoginIllustration } from './login-material';
 import { BackgroundElements } from './login-material'
 import { ThemeToggle } from './login-material';
 import { loginAPI } from '../api/authService';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import './login-material/animations.css';
 import { useAuth } from '../contexts/AuthContext';
 import { useTheme } from '../contexts/ThemeContext';
@@ -19,17 +19,31 @@ const Login = () => {
     remember: false,
   });
   const navigate = useNavigate();
+  const location = useLocation();
   const [isVisible, setIsVisible] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
   const [showSuccess, setShowSuccess] = useState(false);
   const { isDark, toggleTheme } = useTheme();
   const [mounted, setMounted] = useState(false);
-  const [isRegisterOpen,setIsRegisterOpen] = useState(false);
+  const [isRegisterOpen, setIsRegisterOpen] = useState(false);
+  const [initialCode, setInitialCode] = useState<string | undefined>();
   const { login } = useAuth();
+
   useEffect(() => {
     setMounted(true);
   }, []);
+
+  // Deep link: tự động mở form đăng ký nếu URL có ?action=register
+  // Cũng đọc ?code=... để pre-fill mã đăng ký vào form
+  useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    if (params.get('action') === 'register') {
+      const code = params.get('code') || undefined;
+      setInitialCode(code);
+      setIsRegisterOpen(true);
+    }
+  }, [location.search]);
 
   const toggleVisibility = () => setIsVisible(!isVisible);
 
@@ -58,8 +72,8 @@ const Login = () => {
 
   return (
     <div className={`min-h-screen flex items-center justify-center p-4 transition-all duration-500 ${isDark
-        ? 'bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900'
-        : 'bg-gradient-to-br from-blue-50 via-purple-50 to-pink-50'
+      ? 'bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900'
+      : 'bg-gradient-to-br from-blue-50 via-purple-50 to-pink-50'
       }`}>
       {/* Success Modal */}
       <SuccessModal
@@ -78,6 +92,7 @@ const Login = () => {
       <RegisterSaleModal
         visible={isRegisterOpen}
         onClose={() => setIsRegisterOpen(false)}
+        initialCode={initialCode}
       />
       {/* Animated Background Elements */}
       <BackgroundElements isDark={isDark} />
