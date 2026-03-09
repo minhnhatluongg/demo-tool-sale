@@ -9,6 +9,7 @@ import CompanyInfoForm from './components/CompanyInfoForm';
 import ProductSelection from './components/ProductSelection';
 import OrderTypeSelector from './components/OrderTypeSelector';
 import OldContractModal from './components/OldContractModal';
+import CodeValidationStep from './components/CodeValidationStep';
 import { ArrowLeftIcon, CheckCircleIcon } from '@heroicons/react/24/outline';
 import { Dialog } from '@headlessui/react';
 
@@ -29,7 +30,6 @@ const Register: React.FC = () => {
         loading,
         loadingCheck,
         isOwner,
-        ownerUserCode,
         orderType,
         setOrderType,
         oldOID,
@@ -41,6 +41,8 @@ const Register: React.FC = () => {
         loadOldContracts,
         checkAccount,
         submitRegister,
+        codeValidated,
+        validateRegistrationCode,
     } = useRegister();
 
     // Set userCode from logged in user
@@ -62,6 +64,10 @@ const Register: React.FC = () => {
         }
     };
 
+    const handleCodeValidation = async (code: string, userInfo: any) => {
+        await validateRegistrationCode(code);
+    };
+
     const handleSubmit = async () => {
         setOpenConfirm(false);
         try {
@@ -71,6 +77,16 @@ const Register: React.FC = () => {
             // Error đã được handle trong hook
         }
     };
+
+    // Show code validation step if code not yet validated
+    if (!codeValidated) {
+        return (
+            <CodeValidationStep
+                onValidationSuccess={handleCodeValidation}
+                loading={loadingCheck}
+            />
+        );
+    }
 
     return (
         <div className={`min-h-screen transition-colors duration-300 ${isDark
