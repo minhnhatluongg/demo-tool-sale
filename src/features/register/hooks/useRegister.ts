@@ -1,6 +1,5 @@
 import { useState } from 'react';
 import api from '../../../api/apiClient';
-import technicalApi from '../../../api/technicalApi';
 import toast from 'react-hot-toast';
 import { SelectedProduct } from '../../../types';
 
@@ -42,53 +41,6 @@ export const useRegister = () => {
     const [refeContractDate, setRefeContractDate] = useState<string>(new Date().toISOString().split('T')[0]);
     const [oldContractList, setOldContractList] = useState<any[]>([]);
     const [loadingOldContracts, setLoadingOldContracts] = useState(false);
-
-    // Registration code states
-    const [registrationCode, setRegistrationCode] = useState<string>("");
-    const [codeValidated, setCodeValidated] = useState<boolean>(false);
-    const [codeUserInfo, setCodeUserInfo] = useState<any>(null);
-
-    // Validate registration code
-    const validateRegistrationCode = async (code: string) => {
-        if (!code.trim()) {
-            toast.error("Vui lòng nhập mã đăng ký");
-            return false;
-        }
-
-        setLoadingCheck(true);
-        try {
-            const response = await technicalApi.get(`/TechnicalUser/validate-registration-code/${code}`);
-
-            if (response.data.success) {
-                setRegistrationCode(code);
-                setCodeValidated(true);
-                setCodeUserInfo(response.data.data);
-
-                // Pre-fill form with user info from code
-                if (response.data.data?.userInfo) {
-                    const userInfo = response.data.data.userInfo;
-                    setForm(prev => ({
-                        ...prev,
-                        cusName: userInfo.fullName || prev.cusName,
-                        cusEmail: userInfo.email || prev.cusEmail,
-                        cusTel: userInfo.phoneNumber || prev.cusTel,
-                    }));
-                }
-
-                toast.success("✅ Mã hợp lệ! Bạn có thể tiếp tục đăng ký.");
-                return true;
-            } else {
-                toast.error(response.data.message || "Mã không hợp lệ");
-                return false;
-            }
-        } catch (error: any) {
-            console.error("Validation error:", error);
-            toast.error(error.response?.data?.message || "Mã không hợp lệ hoặc đã hết hạn");
-            return false;
-        } finally {
-            setLoadingCheck(false);
-        }
-    };
 
     // Load old contracts
     const loadOldContracts = async () => {
@@ -329,21 +281,6 @@ export const useRegister = () => {
 
             const res = await api.post("/odoo/orders/createFull", payload);
 
-            // Update registration code if validated
-            if (codeValidated && registrationCode) {
-                try {
-                    await technicalApi.post('/TechnicalUser/update-registration-code', {
-                        registrationCode: registrationCode,
-                        usedByTaxCode: form.mst,
-                        usedByCustomerName: form.cusName,
-                        orderOID: res.data.oid || ''
-                    });
-                } catch (codeUpdateError: any) {
-                    console.error("Error updating registration code:", codeUpdateError);
-                    // Don't fail the whole registration if code update fails
-                }
-            }
-
             toast.success(`✅ ${res.data.message} (OID: ${res.data.oid})`);
             setHasAccount(true);
 
@@ -387,9 +324,5 @@ export const useRegister = () => {
         loadOldContracts,
         checkAccount,
         submitRegister,
-        registrationCode,
-        codeValidated,
-        codeUserInfo,
-        validateRegistrationCode,
     };
 };
