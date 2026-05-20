@@ -7,6 +7,12 @@ import ProtectedRoute from "./components/ProtectedRoute";
 import Login from "./pages/Login";
 import Dashboard from "./pages/Dashboard";
 import DashboardLayout from "./layouts/DashboardLayout";
+import AdminLayout from "./layouts/AdminLayout";
+import AdminDashboard from "./pages/admin/AdminDashboard";
+import AdminContracts from "./pages/admin/AdminContracts";
+import AdminLogs from "./pages/admin/AdminLogs";
+import AdminSalesTree from "./pages/admin/AdminSalesTree";
+import AdminExpiring from "./pages/admin/AdminExpiring";
 import RegisterAndPublish_NEW from "./pages/RegisterAndPublish_NEW";
 import Register from "./features/register/Register";
 import Publish from "./features/publish/Publish";
@@ -35,6 +41,23 @@ export default function App() {
               <Route path="publish" element={<Publish />} />
               {/* eslint-disable-next-line react/jsx-pascal-case */}
               <Route path="register-publish" element={<RegisterAndPublish_NEW />} />
+            </Route>
+
+            {/* Admin Routes - Wrapped in AdminLayout */}
+            <Route
+              path="/admin"
+              element={
+                <ProtectedRoute>
+                  <AdminLayout />
+                </ProtectedRoute>
+              }
+            >
+              <Route index element={<Navigate to="/admin/dashboard" replace />} />
+              <Route path="dashboard" element={<AdminDashboard />} />
+              <Route path="contracts" element={<AdminContracts />} />
+              <Route path="sales-tree" element={<AdminSalesTree />} />
+              <Route path="expiring" element={<AdminExpiring />} />
+              <Route path="logs" element={<AdminLogs />} />
             </Route>
 
             {/* Catch all - redirect to login */}
