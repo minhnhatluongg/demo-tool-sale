@@ -17,23 +17,41 @@ interface AuthProviderProps {
     children: ReactNode;
 }
 
+const readPersistedUser = (): { user: User | null; token: string | null } => {
+    const local = {
+        user: localStorage.getItem('user'),
+        token: localStorage.getItem('token'),
+    };
+    if (local.user && local.token) {
+        try {
+            return { user: JSON.parse(local.user) as User, token: local.token };
+        } catch {
+            localStorage.removeItem('user');
+            localStorage.removeItem('token');
+        }
+    }
+    const sess = {
+        user: sessionStorage.getItem('user'),
+        token: sessionStorage.getItem('token'),
+    };
+    if (sess.user && sess.token) {
+        try {
+            return { user: JSON.parse(sess.user) as User, token: sess.token };
+        } catch {
+            sessionStorage.removeItem('user');
+            sessionStorage.removeItem('token');
+        }
+    }
+    return { user: null, token: null };
+};
+
 export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     const [user, setUser] = useState<User | null>(null);
     const [isLoading, setIsLoading] = useState(true);
 
     useEffect(() => {
-        const savedUser = localStorage.getItem('user');
-        const savedToken = localStorage.getItem('token');
-
-        if (savedUser && savedToken) {
-            try {
-                setUser(JSON.parse(savedUser));
-            } catch (error) {
-                console.error('Failed to parse saved user:', error);
-                localStorage.removeItem('user');
-                localStorage.removeItem('token');
-            }
-        }
+        const { user: savedUser } = readPersistedUser();
+        if (savedUser) setUser(savedUser);
         setIsLoading(false);
     }, []);
 
@@ -41,22 +59,20 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         setIsLoading(true);
         try {
             const response = await loginAPI(loginName, password);
-            if (response.success && response.user) {
+            if (response.success && response.user && response.token) {
                 setUser(response.user);
-                if (remember) {
-                    localStorage.setItem('user', JSON.stringify(response.user));
-                    localStorage.setItem('loginName', loginName);
-                    if (response.token) {
-                        localStorage.setItem('token', response.token);
-                    }
-                } else {
-                    // Chỉ lưu vào sessionStorage
-                    sessionStorage.setItem('user', JSON.stringify(response.user));
-                    if (response.token) {
-                        sessionStorage.setItem('token', response.token);
-                    }
+
+                const storage = remember ? localStorage : sessionStorage;
+                storage.setItem('user', JSON.stringify(response.user));
+                storage.setItem('token', response.token);
+                if (response.refreshToken) {
+                    storage.setItem('refreshToken', response.refreshToken);
                 }
-                toast.success(`Chào mừng, ${response.user.fullName}!`);
+                if (remember) {
+                    localStorage.setItem('loginName', loginName);
+                }
+
+                toast.success(`Chào mừng, ${response.user.fullName || response.user.userCode}!`);
             } else {
                 throw new Error(response.message || 'Đăng nhập thất bại');
             }
@@ -72,8 +88,10 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         setUser(null);
         localStorage.removeItem('user');
         localStorage.removeItem('token');
+        localStorage.removeItem('refreshToken');
         sessionStorage.removeItem('user');
         sessionStorage.removeItem('token');
+        sessionStorage.removeItem('refreshToken');
         toast.success('Đã đăng xuất');
     };
 

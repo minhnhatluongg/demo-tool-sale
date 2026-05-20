@@ -1,23 +1,35 @@
+// Khớp với UserDto bên ERP_Portal_RC.Application.DTOs
 export interface User {
+  id?: string;
+  userName?: string;
+  loginName?: string;
   userCode: string;
-  userName: string;
   fullName: string;
   email?: string;
-  password?: string;
+  phoneNumber?: string;
+  country?: string;
+  address?: string;
+  userPosition?: string;
+  languageDefault?: string;
+  grp_List?: string;
+  cmpnID?: string;
+  defaultAppSite?: string;
 }
 
+// Khớp với LoginRequestDto BE
 export interface LoginRequest {
   loginName: string;
   password: string;
-  cmpnID?: string;
-  languageDefault?: string;
 }
 
+// Khớp với ApiResponse<AuthResponseDto> BE → đã unwrap về shape phẳng cho FE.
 export interface LoginResponse {
   success: boolean;
   message?: string;
   user?: User;
   token?: string;
+  refreshToken?: string;
+  expiresAt?: string;
 }
 
 export interface AuthContextType {

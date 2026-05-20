@@ -7,10 +7,9 @@ import { useTheme } from '../../../contexts/ThemeContext';
 interface RegisterSaleProps {
     visible: boolean;
     onClose: () => void;
-    initialCode?: string;
 }
 
-const RegisterSaleModal: React.FC<RegisterSaleProps> = ({ visible, onClose, initialCode }) => {
+const RegisterSaleModal: React.FC<RegisterSaleProps> = ({ visible, onClose }) => {
     const {
         form,
         treeData,
@@ -18,9 +17,7 @@ const RegisterSaleModal: React.FC<RegisterSaleProps> = ({ visible, onClose, init
         setIsCreateAccount,
         handleSubmit,
         loading,
-        codeValidated,
-        handleCodeChange
-    } = useRegisterSale(visible, onClose, initialCode);
+    } = useRegisterSale(visible, onClose);
 
     const { isDark } = useTheme();
 
@@ -108,35 +105,6 @@ const RegisterSaleModal: React.FC<RegisterSaleProps> = ({ visible, onClose, init
                     layout="vertical"
                     initialValues={{ isCreateAccount: false }}
                 >
-                    <Form.Item
-                        name="registrationCode"
-                        label={
-                            <span style={{ color: isDark ? '#f1f5f9' : '#1f2937', fontWeight: 500 }}>
-                                <span style={{ color: '#ef4444', marginRight: '4px' }}>*</span>
-                                Mã đăng ký
-                            </span>
-                        }
-                        rules={[
-                            { required: true, message: 'Vui lòng nhập mã đăng ký từ kỹ thuật viên' }
-                        ]}
-                        extra={
-                            <span style={{ color: isDark ? '#94a3b8' : '#6b7280', fontSize: '13px' }}>
-                                {codeValidated ? (
-                                    <span style={{ color: '#10b981' }}>✅ Mã hợp lệ - Có thể tiếp tục đăng ký</span>
-                                ) : (
-                                    'Liên hệ bộ phận kỹ thuật để nhận mã kích hoạt'
-                                )}
-                            </span>
-                        }
-                    >
-                        <Input
-                            prefix={<SearchOutlined />}
-                            placeholder="Nhập mã đăng ký từ kỹ thuật viên"
-                            size="large"
-                            onChange={(e) => handleCodeChange(e.target.value)}
-                        />
-                    </Form.Item>
-
                     <Form.Item
                         name="fullName"
                         label={

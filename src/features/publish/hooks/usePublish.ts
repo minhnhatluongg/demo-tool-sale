@@ -429,6 +429,8 @@ export const usePublish = () => {
     };
 
     // Xem hóa đơn mẫu
+    // BE: ERP_Portal_RC.InvoicePreviewController.ViewInvoicePreview
+    // POST /api/InvoicePreview/view  → trả về text/html
     const handleViewInvoice = async () => {
         setLoading(true);
         try {
@@ -455,6 +457,8 @@ export const usePublish = () => {
     };
 
     // Xác nhận mẫu
+    // BE: ERP_Portal_RC.InvoicePreviewController.ConfirmSampleAndGetFiles
+    // POST /api/InvoicePreview/confirm-sample → trả về JSON { configuredXslt, finalXmlData, xsltFileName, xmlFileName }
     const handleConfirmTemplate = async () => {
         if (!selectedTemplate && selectedSpecialInvoice === "mauDaThueSuat") {
             toast.error("Vui lòng chọn mẫu hóa đơn!");
@@ -679,9 +683,11 @@ export const usePublish = () => {
 
             console.log("📤 Quick Publish Payload:", publishPayload);
 
-            const res = await api.post("/odoo/orders/quick-publish", publishPayload);
+            // BE: ERP_Portal_RC.InvoicePreviewController.QuickPublish
+            // POST /api/InvoicePreview/quick-publish
+            const res = await api.post("/InvoicePreview/quick-publish", publishPayload);
             toast.success(
-                `✅ ${res.data.message || "Phát hành mẫu thành công!"} | TraceId: ${res.data.traceId || "N/A"}`
+                `✅ ${res.data.message || res.data.Message || "Phát hành mẫu thành công!"} | TraceId: ${res.data.traceId || res.data.TraceId || "N/A"}`
             );
 
             return res.data;
