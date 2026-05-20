@@ -5,7 +5,6 @@ import { LoginForm } from './login-material';
 import { LoginIllustration } from './login-material';
 import { BackgroundElements } from './login-material'
 import { ThemeToggle } from './login-material';
-import { loginAPI } from '../api/authService';
 import { useNavigate, useLocation } from 'react-router-dom';
 import './login-material/animations.css';
 import { useAuth } from '../contexts/AuthContext';
@@ -27,7 +26,6 @@ const Login = () => {
   const { isDark, toggleTheme } = useTheme();
   const [mounted, setMounted] = useState(false);
   const [isRegisterOpen, setIsRegisterOpen] = useState(false);
-  const [initialCode, setInitialCode] = useState<string | undefined>();
   const { login } = useAuth();
 
   useEffect(() => {
@@ -35,12 +33,9 @@ const Login = () => {
   }, []);
 
   // Deep link: tự động mở form đăng ký nếu URL có ?action=register
-  // Cũng đọc ?code=... để pre-fill mã đăng ký vào form
   useEffect(() => {
     const params = new URLSearchParams(location.search);
     if (params.get('action') === 'register') {
-      const code = params.get('code') || undefined;
-      setInitialCode(code);
       setIsRegisterOpen(true);
     }
   }, [location.search]);
@@ -92,7 +87,6 @@ const Login = () => {
       <RegisterSaleModal
         visible={isRegisterOpen}
         onClose={() => setIsRegisterOpen(false)}
-        initialCode={initialCode}
       />
       {/* Animated Background Elements */}
       <BackgroundElements isDark={isDark} />

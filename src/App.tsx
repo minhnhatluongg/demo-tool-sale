@@ -10,8 +10,6 @@ import DashboardLayout from "./layouts/DashboardLayout";
 import RegisterAndPublish_NEW from "./pages/RegisterAndPublish_NEW";
 import Register from "./features/register/Register";
 import Publish from "./features/publish/Publish";
-import TechnicalLogin from "./pages/TechnicalLogin";
-import TechnicalDashboard from "./pages/TechnicalDashboard";
 
 export default function App() {
   return (
@@ -21,10 +19,6 @@ export default function App() {
           <Routes>
             {/* Public Routes */}
             <Route path="/login" element={<Login />} />
-
-            {/* Technical Portal Routes - Secret pages for technical staff */}
-            <Route path="/technical/login" element={<TechnicalLogin />} />
-            <Route path="/technical/dashboard" element={<TechnicalDashboard />} />
 
             {/* Protected Routes - Wrapped in DashboardLayout */}
             <Route
