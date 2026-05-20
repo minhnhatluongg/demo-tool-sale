@@ -6,6 +6,7 @@ import { LoginIllustration } from './login-material';
 import { BackgroundElements } from './login-material'
 import { ThemeToggle } from './login-material';
 import { useNavigate, useLocation } from 'react-router-dom';
+//@ts-ignore
 import './login-material/animations.css';
 import { useAuth } from '../contexts/AuthContext';
 import { useTheme } from '../contexts/ThemeContext';
@@ -27,6 +28,9 @@ const Login = () => {
   const [mounted, setMounted] = useState(false);
   const [isRegisterOpen, setIsRegisterOpen] = useState(false);
   const { login } = useAuth();
+
+  /* Admin UserCode whitelist — phải khớp với ADMIN_USER_CODES bên AuthContext */
+  const ADMIN_USER_CODES = ['001332'];
 
   useEffect(() => {
     setMounted(true);
@@ -53,10 +57,11 @@ const Login = () => {
     }
     setIsLoading(true);
     try {
-      await login(formData.loginName, formData.password, formData.remember);
+      const loggedInUser = await login(formData.loginName, formData.password, formData.remember);
       setShowSuccess(true);
+      const isAdminUser = ADMIN_USER_CODES.includes(loggedInUser.userCode);
       setTimeout(() => {
-        navigate('/dashboard');
+        navigate(isAdminUser ? '/admin/dashboard' : '/dashboard');
       }, 2000);
     } catch (error: any) {
       setError(error.message || 'Không thể kết nối đến máy chủ. Vui lòng thử lại sau!');

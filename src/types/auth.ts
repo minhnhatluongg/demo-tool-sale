@@ -35,7 +35,8 @@ export interface LoginResponse {
 export interface AuthContextType {
   user: User | null;
   isAuthenticated: boolean;
+  isAdmin: boolean;
   isLoading: boolean;
-  login: (loginName: string, password: string, remember: boolean) => Promise<void>;
+  login: (loginName: string, password: string, remember: boolean) => Promise<User>;
   logout: () => void;
 }

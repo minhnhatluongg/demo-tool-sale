@@ -1,93 +1,137 @@
-# 🎯 Demo Tool Sale - React Learning Project
+# ⚡ ERP ToolSale — Admin Console & Sales Portal
 
-> Dự án học React.js với Authentication Flow và Modern UI
-
-## 🚀 Quick Start
-
-```bash
-# Cài đặt dependencies
-npm install
-
-# Chạy development server
-npm start
-```
-
-Ứng dụng sẽ mở tại: **http://localhost:3000**
-
-## 📚 Tài Liệu Chi Tiết
-
-Xem file [SETUP_GUIDE.md](./SETUP_GUIDE.md) để biết:
-- Cấu trúc project
-- Hướng dẫn setup từng bước
-- Tích hợp Backend API
-- Học React qua project này
-- Troubleshooting
-
-## ✨ Features
-
-- ✅ Login Page với modern UI
-- ✅ Protected Routes
-- ✅ Dashboard với stats
-- ✅ React Context API cho state management
-- ✅ TypeScript
-- ✅ Tailwind CSS
-- ✅ Responsive design
-
-## 🏗️ Tech Stack
-
-- **React 19** + TypeScript
-- **React Router** v6
-- **Tailwind CSS** v3
-- **Axios** cho API calls
-- **React Hot Toast** cho notifications
-
-## 📁 Cấu Trúc Chính
-
-```
-src/
-├── api/              # API services
-├── components/       # Reusable components
-├── contexts/         # React Context
-├── layouts/          # Layout components
-├── pages/            # Page components
-│   ├── Login.tsx
-│   ├── Dashboard.tsx
-│   └── RegisterAndPublish_NEW.tsx
-└── types/            # TypeScript types
-```
-
-## 🔐 Authentication Flow
-
-1. User vào `/login`
-2. Nhập username & password
-3. Call API `/api/auth/login`
-4. Lưu user info & token vào localStorage
-5. Redirect đến `/dashboard`
-6. Protected routes check authentication
-
-## 🎨 Screenshots
-
-### Login Page
-![Login](docs/login-preview.png)
-
-### Dashboard
-![Dashboard](docs/dashboard-preview.png)
-
-## 📝 TODO
-
-- [ ] Implement backend API endpoint
-- [ ] Add forgot password
-- [ ] Add user profile page
-- [ ] Add more features from RegisterAndPublish_NEW
-
-## 🤝 Contributing
-
-Đây là project học tập, feel free to modify và experiment, vibe coding !
-
-## 📄 License
-
-Private - For Learning Purpose
+> Internal tool hỗ trợ đội ngũ Sale & Admin quản lý hợp đồng điện tử, giám sát quy trình ký, theo dõi hết hạn TVAN/CKS — xây dựng trên React 19 + TypeScript + TailwindCSS.
 
 ---
 
-**Made with ❤️ by MNL**
+## 🖼️ Screenshots
+
+<!-- Thêm ảnh screenshot vào đây -->
+| Admin — Quản lý hợp đồng | Admin — Cây ASM |
+|:---:|:---:|
+| *screenshot* | *screenshot* |
+
+| Admin — Sắp hết hạn | Sale — Đăng ký HĐ |
+|:---:|:---:|
+| *screenshot* | *screenshot* |
+
+---
+
+## 🎯 Tổng quan
+
+**ERP ToolSale** là công cụ nội bộ phục vụ 2 nhóm người dùng:
+
+### 👤 Sale Portal (Nhân viên kinh doanh)
+- Đăng ký hợp đồng mới (chọn sản phẩm, nhập thông tin KH)
+- Phát hành hợp đồng điện tử
+- Theo dõi trạng thái đơn hàng
+
+### 🛡️ Admin Console (Trọng tâm)
+Bảng điều khiển dành cho quản trị viên với quyền bypass quy trình:
+
+| Tính năng | Mô tả |
+|-----------|--------|
+| **Quản lý hợp đồng** | Xem tất cả HĐ, phân trang server-side (24k+ records), trình ký tự động hàng loạt |
+| **Trình ký tự động** | Auto propose-sign tất cả HĐ chưa ký — chạy tuần tự với progress realtime |
+| **Bypass quy trình** | Cấp TK / Phát hành HĐ / Xuất HĐĐT — bỏ qua các bước phê duyệt |
+| **Gỡ ký / Rút trình ký** | Unsign hoặc rút trình ký với lý do, ghi nhận audit |
+| **Trạng thái xử lý** | Hiển thị đầy đủ pipeline tT1→tT8 dạng badge trực quan |
+| **Cây ASM** | Xem cấu trúc phân cấp Sales (MNG → SUP → TEAM → TDV/CTV), search realtime, highlight kết quả |
+| **Sắp hết hạn** | Theo dõi HĐ TVAN sắp hết hạn (lọc theo range) + Chứng thư số CKS sắp expire |
+| **Logs** | Xem log hệ thống theo category/ngày |
+
+---
+
+## 🏗️ Tech Stack
+
+| Layer | Công nghệ |
+|-------|-----------|
+| Framework | React 19 + TypeScript |
+| Styling | TailwindCSS 3 + Glass morphism UI |
+| Routing | React Router v6 |
+| HTTP | Axios (JWT Bearer auto-inject) |
+| UI Components | Heroicons, Headless UI, Framer Motion |
+| Notifications | React Hot Toast |
+| Build | Create React App |
+
+---
+
+## 📁 Cấu trúc dự án
+
+```
+src/
+├── api/              # API services (adminService, authService, contractService...)
+├── components/       # Shared components (Modal, FormField, Tabs...)
+├── contexts/         # AuthContext, ThemeContext
+├── features/         # Feature modules (register, publish, register-account-sale)
+├── layouts/          # AdminLayout (glass sidebar), DashboardLayout
+├── pages/
+│   ├── admin/        # ⭐ AdminContracts, AdminSalesTree, AdminExpiring, AdminLogs
+│   └── ...           # Login, Dashboard
+├── types/            # TypeScript interfaces
+└── utils/            # Helpers (admin check, formatters)
+```
+
+---
+
+## 🚀 Cài đặt & Chạy
+
+```bash
+# Clone
+git clone <repo-url>
+cd demo-tool-sale
+
+# Install dependencies
+npm install
+
+# Development (proxy → localhost:7112)
+npm start
+
+# Production build
+npm run build
+```
+
+### Biến môi trường
+
+| Env | API Base URL |
+|-----|-------------|
+| Development | `https://localhost:7112/api` |
+| Production | `https://api-erprc.win-tech.vn/api` |
+
+---
+
+## 🔐 Phân quyền
+
+- **JWT Authentication** — token lưu localStorage/sessionStorage
+- **Admin gate** — FE check userCode whitelist, BE check qua `AdminAuthFilter`
+- **Protected routes** — redirect `/login` nếu chưa xác thực
+
+---
+
+## 📡 API Endpoints chính (Admin)
+
+```
+GET  /admin/econtract/list-paged     → Danh sách HĐ phân trang
+GET  /admin/econtract/summary/:oid   → Chi tiết HĐ
+POST /Econtract/propose-sign         → Trình ký
+POST /Econtract/unsign               → Gỡ ký
+POST /Econtract/rut-trinh-ky         → Rút trình ký
+POST /admin/econtract/bypass/captk   → Bypass cấp TK
+POST /admin/econtract/bypass/phat-hanh-hoa-don
+POST /admin/econtract/bypass/xuat-hoa-don-hddt
+GET  /SalesHierarchy/managers/:id    → Cây ASM
+GET  /tvan-renewals/expiring-soon    → TVAN sắp hết hạn
+GET  /RptUsed/cert-expire            → CKS sắp hết hạn
+```
+
+---
+
+## 👨‍💻 Author
+
+**Lương Minh Nhật** — Admin · 001332
+
+---
+
+<p align="center">
+  <sub>Built with ⚡ React 19 &bull; TailwindCSS &bull; TypeScript</sub>
+</p>

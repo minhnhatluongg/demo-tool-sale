@@ -1,7 +1,10 @@
-import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import React, { createContext, useContext, useState, useEffect, useMemo, ReactNode } from 'react';
 import { User, AuthContextType } from '../types/auth';
 import { loginAPI } from '../api/authService';
 import toast from 'react-hot-toast';
+
+/* ─── Admin whitelist (UserCode) ───────────────────────────────────────── */
+const ADMIN_USER_CODES = ['001332'];
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
@@ -48,6 +51,10 @@ const readPersistedUser = (): { user: User | null; token: string | null } => {
 export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     const [user, setUser] = useState<User | null>(null);
     const [isLoading, setIsLoading] = useState(true);
+    const isAdmin = useMemo(() => {
+        if (!user) return false;
+        return ADMIN_USER_CODES.includes(user.userCode);
+    }, [user]);
 
     useEffect(() => {
         const { user: savedUser } = readPersistedUser();
@@ -55,7 +62,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         setIsLoading(false);
     }, []);
 
-    const login = async (loginName: string, password: string, remember: boolean) => {
+    const login = async (loginName: string, password: string, remember: boolean): Promise<User> => {
         setIsLoading(true);
         try {
             const response = await loginAPI(loginName, password);
@@ -73,6 +80,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
                 }
 
                 toast.success(`Chào mừng, ${response.user.fullName || response.user.userCode}!`);
+                return response.user;
             } else {
                 throw new Error(response.message || 'Đăng nhập thất bại');
             }
@@ -98,6 +106,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     const value: AuthContextType = {
         user,
         isAuthenticated: !!user,
+        isAdmin,
         isLoading,
         login,
         logout,
