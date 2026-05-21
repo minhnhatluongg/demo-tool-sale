@@ -9,7 +9,9 @@
 <!-- Thêm ảnh screenshot vào đây -->
 | Admin — Quản lý hợp đồng | Admin — Cây ASM |
 |:---:|:---:|
-| *screenshot* | *screenshot* |
+| *<img width="1910" height="981" alt="image" src="https://github.com/user-attachments/assets/eac43d8c-e1c5-44ca-a189-ebba3f82408a" />
+* | *<img width="1359" height="682" alt="image" src="https://github.com/user-attachments/assets/05d06c81-3c27-4428-abfe-cea31c89bd14" />
+* |
 
 | Admin — Sắp hết hạn | Sale — Đăng ký HĐ |
 |:---:|:---:|
