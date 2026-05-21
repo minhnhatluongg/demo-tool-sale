@@ -16,6 +16,7 @@ import AdminExpiring from "./pages/admin/AdminExpiring";
 import RegisterAndPublish_NEW from "./pages/RegisterAndPublish_NEW";
 import Register from "./features/register/Register";
 import Publish from "./features/publish/Publish";
+import CreateAccount from "./features/create-account/CreateAccount";
 
 export default function App() {
   return (
@@ -57,6 +58,7 @@ export default function App() {
               <Route path="contracts" element={<AdminContracts />} />
               <Route path="sales-tree" element={<AdminSalesTree />} />
               <Route path="expiring" element={<AdminExpiring />} />
+              <Route path="create-account" element={<CreateAccount />} />
               <Route path="logs" element={<AdminLogs />} />
             </Route>
 

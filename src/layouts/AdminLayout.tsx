@@ -10,6 +10,7 @@ import {
     BoltIcon,
     UserGroupIcon,
     ExclamationTriangleIcon,
+    BuildingOffice2Icon,
 } from '@heroicons/react/24/outline';
 
 /* Vision-UI inspired dark layout: glass sidebar + glow accents */
@@ -27,6 +28,7 @@ const AdminLayout: React.FC = () => {
         { to: '/admin/contracts', label: 'Hợp đồng', icon: DocumentTextIcon },
         { to: '/admin/expiring', label: 'Sắp hết hạn', icon: ExclamationTriangleIcon },
         { to: '/admin/sales-tree', label: 'Cây ASM', icon: UserGroupIcon },
+        { to: '/admin/create-account', label: 'Cấp TK WinInvoice', icon: BuildingOffice2Icon },
         { to: '/admin/logs', label: 'Logs', icon: DocumentMagnifyingGlassIcon },
     ];
 
