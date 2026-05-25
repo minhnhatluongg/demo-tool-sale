@@ -72,15 +72,54 @@ const AdminExpiring: React.FC = () => {
     const [certSearch, setCertSearch] = useState('');
     const [certLoading, setCertLoading] = useState(false);
 
+    /* ─── Column resize state ─── */
+    const [customerNameWidth, setCustomerNameWidth] = useState(220);
+    const [saleNameWidth, setSaleNameWidth] = useState(150);
+    const [resizingCol, setResizingCol] = useState<'customer' | 'sale' | null>(null);
+    const [resizeStartX, setResizeStartX] = useState(0);
+
+    /* ─── Resize handlers ─── */
+    const handleResizeStart = (col: 'customer' | 'sale', e: React.MouseEvent) => {
+        e.preventDefault();
+        setResizingCol(col);
+        setResizeStartX(e.clientX);
+    };
+
+    React.useEffect(() => {
+        if (!resizingCol) return;
+
+        const handleMouseMove = (e: MouseEvent) => {
+            const delta = e.clientX - resizeStartX;
+            if (resizingCol === 'customer') {
+                setCustomerNameWidth(prev => Math.max(100, prev + delta));
+            } else if (resizingCol === 'sale') {
+                setSaleNameWidth(prev => Math.max(100, prev + delta));
+            }
+            setResizeStartX(e.clientX);
+        };
+
+        const handleMouseUp = () => {
+            setResizingCol(null);
+        };
+
+        document.addEventListener('mousemove', handleMouseMove);
+        document.addEventListener('mouseup', handleMouseUp);
+
+        return () => {
+            document.removeEventListener('mousemove', handleMouseMove);
+            document.removeEventListener('mouseup', handleMouseUp);
+        };
+    }, [resizingCol, resizeStartX]);
+
     /* ─── TVAN fetch ─── */
-    const fetchTvan = async (p = tvanPage, s = tvanSize) => {
+    const fetchTvan = async (p = tvanPage, s = tvanSize, rangeKey?: string) => {
         setTvanLoading(true);
         try {
             const res = await getTvanExpiringSoon({
                 daysBeforeExpiry: 90,
                 includeExpired: true,
                 keyword: tvanSearch || undefined,
-                rangeKey: tvanRange || undefined,
+                rangeKey: rangeKey !== undefined ? rangeKey : tvanRange || undefined,
                 page: p,
                 size: s,
             });
@@ -253,7 +292,10 @@ const AdminExpiring: React.FC = () => {
                             {rangeOptions.map(r => (
                                 <button
                                     key={r.key}
-                                    onClick={() => { setTvanRange(r.key); setTimeout(() => fetchTvan(1), 0); }}
+                                    onClick={() => {
+                                        setTvanRange(r.key);
+                                        fetchTvan(1, tvanSize, r.key);
+                                    }}
                                     className={`px-2.5 py-1 rounded-lg text-xs font-medium border transition-colors ${
                                         tvanRange === r.key
                                             ? r.tone + ' ring-1 ring-white/20'
@@ -275,14 +317,27 @@ const AdminExpiring: React.FC = () => {
                     </div>
 
                     {/* Table */}
-                    <div className="overflow-x-auto">
+                    <div className="overflow-x-auto" style={{ userSelect: resizingCol ? 'none' : 'auto', cursor: resizingCol ? 'col-resize' : 'auto' }}>
                         <table className="min-w-full text-sm">
                             <thead className="bg-white/5 text-indigo-200">
                                 <tr>
                                     <th className="text-left px-3 py-3 font-semibold whitespace-nowrap">MST</th>
-                                    <th className="text-left px-3 py-3 font-semibold whitespace-nowrap">Khách hàng</th>
-                                    <th className="text-left px-3 py-3 font-semibold whitespace-nowrap">Sale</th>
-                                    <th className="text-left px-3 py-3 font-semibold whitespace-nowrap">Gói</th>
+                                    <th className="text-left px-3 py-3 font-semibold whitespace-nowrap relative group">
+                                        Khách hàng
+                                        <div
+                                            onMouseDown={(e) => handleResizeStart('customer', e)}
+                                            className="absolute right-0 top-0 bottom-0 w-1 cursor-col-resize hover:bg-indigo-500 transition-colors opacity-0 group-hover:opacity-100"
+                                        />
+                                    </th>
+                                    <th className="text-left px-3 py-3 font-semibold whitespace-nowrap relative group">
+                                        Sale
+                                        <div
+                                            onMouseDown={(e) => handleResizeStart('sale', e)}
+                                            className="absolute right-0 top-0 bottom-0 w-1 cursor-col-resize hover:bg-indigo-500 transition-colors opacity-0 group-hover:opacity-100"
+                                        />
+                                    </th>
+                                    <th className="text-left px-3 py-3 font-semibold whitespace-nowrap">Mã Sale</th>
+                                    <th className="text-left px-3 py-3 font-semibold whitespace-nowrap">Mã Hợp Đồng</th>
                                     <th className="text-left px-3 py-3 font-semibold whitespace-nowrap">Ngày hết hạn</th>
                                     <th className="text-center px-3 py-3 font-semibold whitespace-nowrap">Còn lại</th>
                                     <th className="text-center px-3 py-3 font-semibold whitespace-nowrap">Trạng thái</th>
@@ -296,11 +351,12 @@ const AdminExpiring: React.FC = () => {
                                     <tr><td colSpan={7} className="text-center text-gray-500 py-10">Không có dữ liệu</td></tr>
                                 )}
                                 {!tvanLoading && tvanRows.map((r, idx) => (
-                                    <tr key={(r.oid || r.mst || '') + idx} className="hover:bg-white/[0.03] transition-colors">
-                                        <td className="px-3 py-2.5 font-mono text-xs text-indigo-200 whitespace-nowrap">{r.mst || '—'}</td>
-                                        <td className="px-3 py-2.5 max-w-[220px] truncate" title={r.cusName}>{r.cusName || '—'}</td>
-                                        <td className="px-3 py-2.5 text-gray-300 max-w-[150px] truncate" title={r.saleFullName || r.saleCode}>{r.saleFullName || r.saleCode || '—'}</td>
-                                        <td className="px-3 py-2.5 text-gray-400 text-xs">{r.packageName || '—'}</td>
+                                    <tr key={(r.oid || r.taxNumber || '') + idx} className="hover:bg-white/[0.03] transition-colors">
+                                        <td className="px-3 py-2.5 font-mono text-xs text-indigo-200 whitespace-nowrap">{r.taxNumber || '—'}</td>
+                                        <td className="px-3 py-2.5 truncate" style={{ maxWidth: `${customerNameWidth}px` }} title={r.customerName}>{r.customerName || '—'}</td>
+                                        <td className="px-3 py-2.5 text-gray-300 truncate" style={{ maxWidth: `${saleNameWidth}px` }} title={r.saleFullName || r.saleCode}>{r.saleFullName || r.saleCode || '—'}</td>
+                                        <td className="px-3 py-2.5 text-gray-400 text-xs whitespace-nowrap">{r.saleCode || '—'}</td>
+                                        <td className="px-3 py-2.5 text-gray-400 text-xs">{r.contractOID || '—'}</td>
                                         <td className="px-3 py-2.5 text-gray-300 whitespace-nowrap">{fmtDate(r.expiryDate)}</td>
                                         <td className="px-3 py-2.5 text-center">
                                             <span className={`font-bold text-xs ${
