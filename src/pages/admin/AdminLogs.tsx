@@ -1,9 +1,11 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import toast from 'react-hot-toast';
 import {
     DocumentMagnifyingGlassIcon,
     MagnifyingGlassIcon,
     ArrowPathIcon,
+    ChevronDoubleLeftIcon,
+    ChevronDoubleRightIcon,
 } from '@heroicons/react/24/outline';
 import {
     adminLogListFiles,
@@ -13,6 +15,19 @@ import {
 
 type Category = 'econtract' | 'externalapi' | 'stdout';
 
+// Khi user chọn "Tất cả" → gửi pageSize rất lớn để BE trả về toàn bộ trong 1 trang
+const VIEW_ALL_PAGE_SIZE = 100000;
+const PAGE_SIZE_OPTIONS = [200, 500, 1000, 2000, VIEW_ALL_PAGE_SIZE];
+
+const formatPageSizeLabel = (size: number) =>
+    size === VIEW_ALL_PAGE_SIZE ? 'Tất cả' : `${size} dòng/trang`;
+
+// Trích ngày yyyy-MM-dd trong tên file để sort cho chắc chắn (mới nhất ở đầu)
+const extractDate = (name: string): string => {
+    const m = name.match(/(\d{4}-\d{2}-\d{2})/);
+    return m ? m[1] : '';
+};
+
 const AdminLogs: React.FC = () => {
     const [category, setCategory] = useState<Category>('econtract');
     const [files, setFiles] = useState<any[]>([]);
@@ -21,10 +36,13 @@ const AdminLogs: React.FC = () => {
     const [selectedFile, setSelectedFile] = useState<string | null>(null);
     const [lines, setLines] = useState<string[]>([]);
     const [page, setPage] = useState(1);
-    const [pageSize] = useState(200);
+    const [pageSize, setPageSize] = useState<number>(200);
     const [totalPages, setTotalPages] = useState(1);
     const [totalLines, setTotalLines] = useState(0);
     const [loadingRead, setLoadingRead] = useState(false);
+
+    // Ô input nhảy trang (không sync trực tiếp với `page` để user gõ thoải mái)
+    const [pageInput, setPageInput] = useState<string>('1');
 
     const [keyword, setKeyword] = useState('');
     const [searchMode, setSearchMode] = useState(false);
@@ -43,22 +61,68 @@ const AdminLogs: React.FC = () => {
         }
     };
 
-    const readFile = async (file: string, p = 1) => {
+    // Sort lại ở FE để đảm bảo: ngày mới nhất luôn ở trên cùng
+    const sortedFiles = useMemo(() => {
+        const arr = [...files];
+        arr.sort((a, b) => {
+            const nameA = String(a.fileName ?? a.FileName ?? a.name ?? '');
+            const nameB = String(b.fileName ?? b.FileName ?? b.name ?? '');
+            const dA = extractDate(nameA);
+            const dB = extractDate(nameB);
+            if (dA && dB && dA !== dB) return dB.localeCompare(dA); // ngày desc
+            // cùng ngày (hoặc không có ngày) → fallback theo lastModified, rồi tên
+            const mA = String(a.lastModified ?? a.LastModified ?? '');
+            const mB = String(b.lastModified ?? b.LastModified ?? '');
+            if (mA && mB && mA !== mB) return mB.localeCompare(mA);
+            return nameB.localeCompare(nameA);
+        });
+        return arr;
+    }, [files]);
+
+    const readFile = async (file: string, p = 1, size: number = pageSize) => {
         setLoadingRead(true);
         setSearchMode(false);
         try {
-            const res = await adminLogReadFile({ category, fileName: file, page: p, pageSize });
+            const res = await adminLogReadFile({ category, fileName: file, page: p, pageSize: size });
             const data = res?.data ?? res;
             setLines(data?.lines ?? data?.Lines ?? []);
-            setTotalPages(data?.totalPages ?? data?.TotalPages ?? 1);
-            setTotalLines(data?.totalLines ?? data?.TotalLines ?? 0);
-            setPage(data?.page ?? data?.Page ?? p);
+            const tp = data?.totalPages ?? data?.TotalPages ?? 1;
+            const tl = data?.totalLines ?? data?.TotalLines ?? 0;
+            const pg = data?.page ?? data?.Page ?? p;
+            setTotalPages(tp);
+            setTotalLines(tl);
+            setPage(pg);
+            setPageInput(String(pg));
             setSelectedFile(file);
         } catch (e: any) {
             toast.error(e?.response?.data?.message || 'Không đọc được file');
             setLines([]);
         } finally {
             setLoadingRead(false);
+        }
+    };
+
+    const goToPage = (target: number) => {
+        if (!selectedFile) return;
+        const clamped = Math.max(1, Math.min(totalPages || 1, Math.floor(target) || 1));
+        if (clamped === page && !loadingRead) return;
+        readFile(selectedFile, clamped);
+    };
+
+    const onPageInputCommit = () => {
+        const n = parseInt(pageInput, 10);
+        if (Number.isNaN(n)) {
+            setPageInput(String(page));
+            return;
+        }
+        goToPage(n);
+    };
+
+    const onChangePageSize = (size: number) => {
+        setPageSize(size);
+        if (selectedFile) {
+            // Đổi pageSize → quay về trang 1 với size mới
+            readFile(selectedFile, 1, size);
         }
     };
 
@@ -78,13 +142,14 @@ const AdminLogs: React.FC = () => {
                 category,
                 fileName: selectedFile,
                 keyword: keyword.trim(),
-                maxLines: 500,
+                maxLines: 1000,
             });
             const data = res?.data ?? res;
             setLines(data?.lines ?? []);
             setTotalLines(data?.matchCount ?? data?.lines?.length ?? 0);
             setTotalPages(1);
             setPage(1);
+            setPageInput('1');
         } catch (e: any) {
             toast.error(e?.response?.data?.message || 'Tìm kiếm lỗi');
             setLines([]);
@@ -96,6 +161,10 @@ const AdminLogs: React.FC = () => {
     useEffect(() => {
         setSelectedFile(null);
         setLines([]);
+        setPage(1);
+        setPageInput('1');
+        setTotalPages(1);
+        setTotalLines(0);
         loadFiles();
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [category]);
@@ -139,7 +208,9 @@ const AdminLogs: React.FC = () => {
                 {/* Files panel */}
                 <div className="lg:col-span-1 rounded-2xl bg-white/5 backdrop-blur-xl border border-white/10 shadow-xl p-4">
                     <div className="flex items-center justify-between mb-3">
-                        <h3 className="text-sm font-semibold text-indigo-200">Files</h3>
+                        <h3 className="text-sm font-semibold text-indigo-200">
+                            Files <span className="text-[10px] text-gray-500 font-normal">(mới → cũ)</span>
+                        </h3>
                         <button
                             onClick={loadFiles}
                             className="p-1.5 rounded-md bg-white/5 hover:bg-white/10 transition-colors"
@@ -150,10 +221,10 @@ const AdminLogs: React.FC = () => {
                     </div>
                     <div className="max-h-[60vh] overflow-y-auto space-y-1 pr-1">
                         {loadingFiles && <p className="text-xs text-gray-400">Đang tải...</p>}
-                        {!loadingFiles && files.length === 0 && (
+                        {!loadingFiles && sortedFiles.length === 0 && (
                             <p className="text-xs text-gray-500">Không có file</p>
                         )}
-                        {files.map((f: any, i: number) => {
+                        {sortedFiles.map((f: any, i: number) => {
                             const name = f.fileName ?? f.FileName ?? f.name ?? String(f);
                             const sizeKB = f.sizeKB ?? f.SizeKB ?? (f.sizeBytes ? Math.round(f.sizeBytes / 1024) : null);
                             const isActive = selectedFile === name;
@@ -190,7 +261,23 @@ const AdminLogs: React.FC = () => {
                                 </span>
                             )}
                         </div>
-                        <div className="flex gap-2">
+                        <div className="flex gap-2 flex-wrap">
+                            {/* Page-size selector */}
+                            {selectedFile && !searchMode && (
+                                <select
+                                    value={pageSize}
+                                    onChange={e => onChangePageSize(parseInt(e.target.value, 10))}
+                                    className="px-2 py-1.5 rounded-lg bg-white/5 border border-white/10 text-sm text-gray-200 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                                    title="Số dòng mỗi trang"
+                                >
+                                    {PAGE_SIZE_OPTIONS.map(s => (
+                                        <option key={s} value={s} className="bg-slate-900">
+                                            {formatPageSizeLabel(s)}
+                                        </option>
+                                    ))}
+                                </select>
+                            )}
+
                             <div className="relative">
                                 <MagnifyingGlassIcon className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
                                 <input
@@ -231,22 +318,64 @@ const AdminLogs: React.FC = () => {
                     </pre>
 
                     {!searchMode && selectedFile && (
-                        <div className="flex items-center justify-between pt-3 text-xs">
-                            <span className="text-gray-400">Trang {page}/{totalPages}</span>
-                            <div className="flex gap-2">
+                        <div className="flex flex-wrap items-center justify-between gap-2 pt-3 text-xs">
+                            <span className="text-gray-400">
+                                Trang <span className="text-gray-200 font-semibold">{page}</span> / {totalPages}
+                                {pageSize === VIEW_ALL_PAGE_SIZE && (
+                                    <span className="ml-2 px-2 py-0.5 rounded-full bg-emerald-500/15 text-emerald-300 text-[10px]">
+                                        Đang xem toàn bộ file
+                                    </span>
+                                )}
+                            </span>
+                            <div className="flex items-center gap-2">
+                                {/* Trang đầu */}
                                 <button
                                     disabled={page <= 1 || loadingRead}
-                                    onClick={() => selectedFile && readFile(selectedFile, page - 1)}
+                                    onClick={() => goToPage(1)}
+                                    className="p-1.5 rounded-md bg-white/5 hover:bg-white/10 disabled:opacity-40"
+                                    title="Trang đầu"
+                                >
+                                    <ChevronDoubleLeftIcon className="w-3.5 h-3.5" />
+                                </button>
+                                <button
+                                    disabled={page <= 1 || loadingRead}
+                                    onClick={() => goToPage(page - 1)}
                                     className="px-3 py-1 rounded-md bg-white/5 hover:bg-white/10 disabled:opacity-40"
                                 >
                                     ← Trước
                                 </button>
+
+                                {/* Input nhảy trang */}
+                                <div className="flex items-center gap-1">
+                                    <input
+                                        type="number"
+                                        min={1}
+                                        max={totalPages}
+                                        value={pageInput}
+                                        onChange={e => setPageInput(e.target.value)}
+                                        onKeyDown={e => { if (e.key === 'Enter') onPageInputCommit(); }}
+                                        onBlur={onPageInputCommit}
+                                        className="w-16 text-center px-2 py-1 rounded-md bg-white/5 border border-white/10 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                                        title="Nhập số trang rồi Enter để nhảy"
+                                    />
+                                    <span className="text-gray-500">/ {totalPages}</span>
+                                </div>
+
                                 <button
                                     disabled={page >= totalPages || loadingRead}
-                                    onClick={() => selectedFile && readFile(selectedFile, page + 1)}
+                                    onClick={() => goToPage(page + 1)}
                                     className="px-3 py-1 rounded-md bg-white/5 hover:bg-white/10 disabled:opacity-40"
                                 >
                                     Sau →
+                                </button>
+                                {/* Trang cuối */}
+                                <button
+                                    disabled={page >= totalPages || loadingRead}
+                                    onClick={() => goToPage(totalPages)}
+                                    className="p-1.5 rounded-md bg-white/5 hover:bg-white/10 disabled:opacity-40"
+                                    title="Trang cuối"
+                                >
+                                    <ChevronDoubleRightIcon className="w-3.5 h-3.5" />
                                 </button>
                             </div>
                         </div>

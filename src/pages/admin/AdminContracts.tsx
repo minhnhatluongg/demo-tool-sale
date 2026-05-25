@@ -50,12 +50,12 @@ const fmtDate = (s?: string) => {
 
 interface StatusInfo { label: string; tone: string; }
 const statusMap: Record<number, StatusInfo> = {
-    0:   { label: 'Trình ký',  tone: 'bg-amber-500/15 text-amber-300 border-amber-500/30' },
-    101: { label: 'Chờ KT',    tone: 'bg-cyan-500/15 text-cyan-300 border-cyan-500/30' },
+    0:   { label: 'Dự Thảo',  tone: 'bg-amber-500/15 text-amber-300 border-amber-500/30' },
+    101: { label: 'Trình Ký',    tone: 'bg-cyan-500/15 text-cyan-300 border-cyan-500/30' },
     201: { label: 'Chờ GĐ',    tone: 'bg-blue-500/15 text-blue-300 border-blue-500/30' },
-    301: { label: 'Đã duyệt',  tone: 'bg-emerald-500/15 text-emerald-300 border-emerald-500/30' },
+    301: { label: 'Kế Toán Đã duyệt',  tone: 'bg-emerald-500/15 text-emerald-300 border-emerald-500/30' },
     401: { label: 'KH ký',     tone: 'bg-fuchsia-500/15 text-fuchsia-300 border-fuchsia-500/30' },
-    501: { label: 'Đã ký',     tone: 'bg-emerald-500/15 text-emerald-300 border-emerald-500/30' },
+    501: { label: 'KH Đã ký',     tone: 'bg-emerald-500/15 text-emerald-300 border-emerald-500/30' },
 };
 
 const StatusBadge: React.FC<{ code?: number }> = ({ code }) => {
