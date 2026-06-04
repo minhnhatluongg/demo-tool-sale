@@ -145,13 +145,13 @@ export default function RegisterAndPublish() {
 
     setLoadingCheck(true);
     try {
-      const res = await api.get("/Win/check-account", {
+      const res = await api.get("/Account/check-account", {
         params: { mst },
       });
       const data = res.data?.data;
-      setHasAccount(res.data.hasAccount);
+      setHasAccount(!!data?.hasAccount);
       setServerInfo(data?.serverName || "");
-      if (res.data.hasAccount)
+      if (data?.hasAccount)
         toast(`KH đã có tài khoản EVAT (${data.serverName})`, {
           icon: "⚠️",
           style: { background: "#FEF3C7", color: "#92400E" },
