@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import api from '../../../api/apiClient';
 import toast from 'react-hot-toast';
 import { FullInfoResponse, SelectedProduct, ContractOptions } from '../../../types';
@@ -75,6 +75,51 @@ export const usePublish = () => {
             doManh: 0,
         },
     });
+
+    // Map cấu hình BE dò được (AdjustConfigDto, camelCase) → state checkbox của FE.
+    // Đảm bảo "hiển thị SĐT thì tick, không hiển thị thì bỏ tick" đúng theo NỘI DUNG mẫu.
+    const applyDetectedConfig = (detected: any) => {
+        if (!detected) return;
+        setAdjustConfig((prev) => ({
+            ...prev,
+            email: !!detected.isEmail,
+            fax: !!detected.isFax,
+            soDT: !!detected.isSoDT,
+            taiKhoanNganHang: !!detected.isTaiKhoanNganHang,
+            website: !!detected.isWebsite,
+            songNgu: !!detected.isSongNgu,
+            thayDoiVien: !!detected.isThayDoiVien,
+            vienConfig: {
+                selectedVien: detected.vienConfig?.selectedVien ?? prev.vienConfig.selectedVien ?? "",
+                doManh: detected.vienConfig?.doManh ?? prev.vienConfig.doManh ?? 0,
+            },
+        }));
+    };
+
+    // Khi chọn mẫu (TemplateId) → đọc cấu hình ẩn/hiện + viền trực tiếp từ file mẫu để tick chính xác.
+    useEffect(() => {
+        const id = parseInt(selectedTemplate);
+        if (!id) return;
+
+        let cancelled = false;
+        (async () => {
+            try {
+                const res = await api.get(`/invoice/templates/${id}`);
+                const detected = res.data?.data?.detectedConfig;
+                if (!cancelled && detected) {
+                    applyDetectedConfig(detected);
+                    toast.success("👁️ Đã đọc cấu hình ẩn/hiện từ mẫu");
+                }
+            } catch {
+                // Không chặn flow nếu dò cấu hình lỗi
+            }
+        })();
+
+        return () => {
+            cancelled = true;
+        };
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [selectedTemplate]);
 
     // Handler cho việc chọn hóa đơn đặc biệt (chỉ 1)
     const handleSpecialInvoiceSelect = (type: string) => {
@@ -295,10 +340,21 @@ export const usePublish = () => {
         toast.success(`✅ Đã tải file XML: ${file.name}`);
     };
 
-    // Handle XSLT upload
-    const handleXsltUpload = (file: File) => {
+    // Handle XSLT upload — đọc luôn cấu hình ẩn/hiện + viền từ file để tick checkbox chính xác.
+    const handleXsltUpload = async (file: File) => {
         setXsltFile(file);
         toast.success(`✅ Đã tải file XSLT: ${file.name}`);
+        try {
+            const text = await file.text();
+            const res = await api.post("/invoice/templates/detect-config", { rawXslt: text });
+            const detected = res.data?.data;
+            if (detected) {
+                applyDetectedConfig(detected);
+                toast.success("👁️ Đã đọc cấu hình ẩn/hiện từ file XSLT");
+            }
+        } catch {
+            // Không chặn flow nếu dò cấu hình lỗi
+        }
     };
 
     // Remove logo
@@ -511,8 +567,9 @@ export const usePublish = () => {
             return;
         }
 
-        const cleanedXslt = configuredXslt.replace(/[\t\n]/g, "");
-        const blob = new Blob([cleanedXslt], { type: "application/xslt+xml" });
+        // KHÔNG xóa \t\n: XSLT chứa <script><![CDATA[...]]> — mất xuống dòng sẽ phá JavaScript
+        // (comment // nuốt cả script ⇒ mất viền & phân trang). Giữ nguyên nội dung từ BE.
+        const blob = new Blob([configuredXslt], { type: "application/xslt+xml" });
         const url = URL.createObjectURL(blob);
         const a = document.createElement("a");
         a.href = url;
@@ -575,9 +632,11 @@ export const usePublish = () => {
             const sampleId = 'NEW';
             console.log(`🔍 sampleId: ${sampleId} (Always NEW)`);
 
-            // Clean và encode configuredXslt
-            const cleanedXslt = configuredXslt.replace(/[\t\n]/g, "");
-            const xsltBase64 = btoa(unescape(encodeURIComponent(cleanedXslt)));
+            // QUAN TRỌNG: KHÔNG xóa \t\n. XSLT có <script><![CDATA[...]]>; bỏ xuống dòng sẽ
+            // biến cả script thành 1 dòng → các comment "//" nuốt hết phần sau → JS chết →
+            // mất class 'vienhd' (mất viền) & mất phân trang khi sang hệ thống hóa đơn.
+            // Dùng đúng base64 đã tạo ở bước "Xác nhận mẫu" (giữ nguyên 100% nội dung BE trả về).
+            const xsltBase64 = finalConfiguredXsltBase64 || btoa(unescape(encodeURIComponent(configuredXslt)));
 
             // Build payload theo đúng schema backend
             const publishPayload = {

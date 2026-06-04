@@ -76,12 +76,12 @@ export const useRegister = () => {
 
         setLoadingCheck(true);
         try {
-            const res = await api.get("/Win/check-account", { params: { mst } });
+            const res = await api.get("/Account/check-account", { params: { mst } });
             const data = res.data?.data;
-            setHasAccount(res.data.hasAccount);
+            setHasAccount(!!data?.hasAccount);
             setServerInfo(data?.serverName || "");
 
-            if (res.data.hasAccount) {
+            if (data?.hasAccount) {
                 // Có tài khoản -> gọi API lấy thông tin đầy đủ
                 try {
                     const fullInfoRes = await api.get("/Tax/get-full-info-by-mst", {
