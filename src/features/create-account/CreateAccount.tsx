@@ -1,10 +1,8 @@
 import React, { useMemo } from 'react';
-import { useTheme } from '../../contexts/ThemeContext';
 import { useCreateAccount } from './hooks/useCreateAccount';
 import {
     BuildingOffice2Icon,
     IdentificationIcon,
-    MagnifyingGlassIcon,
     PaperAirplaneIcon,
     ArrowPathIcon,
     CheckCircleIcon,
@@ -15,6 +13,7 @@ import {
     GlobeAltIcon,
     BanknotesIcon,
     UserIcon,
+    MagnifyingGlassIcon,
 } from '@heroicons/react/24/outline';
 
 /* ──────────────────────────────────────────────────────────────────────── *
@@ -30,7 +29,6 @@ interface FieldProps {
     placeholder?: string;
     type?: string;
     required?: boolean;
-    isDark: boolean;
     inputMode?: React.HTMLAttributes<HTMLInputElement>['inputMode'];
     maxLength?: number;
     error?: string;
@@ -38,40 +36,34 @@ interface FieldProps {
 }
 
 const Field: React.FC<FieldProps> = React.memo(
-    ({ label, icon: Icon, value, onChange, placeholder, type = 'text', required, isDark, inputMode, maxLength, error, autoFocus }) => {
-        const inputCls = `w-full px-4 py-2.5 rounded-lg border transition-all focus:outline-none focus:ring-2 ${
-            isDark
-                ? 'bg-slate-700/50 border-slate-600 text-white placeholder-gray-400 focus:ring-indigo-500 focus:border-indigo-500'
-                : 'bg-white border-gray-300 text-gray-900 placeholder-gray-400 focus:ring-indigo-500 focus:border-indigo-500'
-        } ${error ? '!border-rose-500 focus:!ring-rose-500' : ''}`;
-
-        const labelCls = `block text-sm font-medium mb-1.5 ${isDark ? 'text-gray-200' : 'text-gray-700'}`;
-
+    ({ label, icon: Icon, value, onChange, placeholder, type = 'text', required, inputMode, maxLength, error, autoFocus }) => {
         return (
             <div>
-                <label className={labelCls}>
-                    {label} {required && <span className="text-red-500">*</span>}
+                <label className="block text-xs font-medium text-[#2F3437] mb-1.5">
+                    {label} {required && <span className="text-[#9F2F2D]">*</span>}
                 </label>
                 <div className="relative">
                     {Icon && (
-                        <Icon
-                            className={`absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 ${
-                                isDark ? 'text-gray-400' : 'text-gray-400'
-                            }`}
-                        />
+                        <Icon className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#a8a6a1]" />
                     )}
                     <input
                         type={type}
                         value={value}
                         onChange={(e) => onChange(e.target.value)}
                         placeholder={placeholder}
-                        className={`${inputCls} ${Icon ? 'pl-10' : ''}`}
+                        className={`w-full px-3 py-2 rounded-md bg-white border text-sm text-[#2F3437] placeholder:text-[#a8a6a1] focus:outline-none transition-colors duration-200 ${
+                            Icon ? 'pl-9' : ''
+                        } ${
+                            error
+                                ? 'border-[#d98b88] focus:border-[#9F2F2D]'
+                                : 'border-[#EAEAEA] focus:border-[#111111]'
+                        }`}
                         inputMode={inputMode}
                         maxLength={maxLength}
                         autoFocus={autoFocus}
                     />
                 </div>
-                {error && <p className="mt-1 text-xs text-rose-500">{error}</p>}
+                {error && <p className="mt-1.5 text-xs text-[#9F2F2D]">{error}</p>}
             </div>
         );
     }
@@ -112,10 +104,32 @@ const isValidCccdLength = (cccd: string) => cccd === '' || CCCD_LENGTHS.includes
 /** Chỉ giữ chữ số */
 const onlyDigits = (s: string) => s.replace(/\D/g, '');
 
+/* ─── Notice (info / success / warning / error) — pastel, hairline ─────── */
+
+type NoticeTone = 'success' | 'warning' | 'error';
+
+const noticeTone: Record<NoticeTone, { bg: string; fg: string; Icon: React.ComponentType<{ className?: string }> }> = {
+    success: { bg: 'bg-[#EDF3EC]', fg: 'text-[#346538]', Icon: CheckCircleIcon },
+    warning: { bg: 'bg-[#FBF3DB]', fg: 'text-[#956400]', Icon: InformationCircleIcon },
+    error:   { bg: 'bg-[#FDEBEC]', fg: 'text-[#9F2F2D]', Icon: ExclamationTriangleIcon },
+};
+
+const Notice: React.FC<{ tone: NoticeTone; title: string; children?: React.ReactNode }> = ({ tone, title, children }) => {
+    const t = noticeTone[tone];
+    return (
+        <div className={`flex items-start gap-3 rounded-md p-4 ${t.bg}`}>
+            <t.Icon className={`w-5 h-5 mt-0.5 shrink-0 ${t.fg}`} />
+            <div className="text-sm min-w-0">
+                <p className={`font-medium ${t.fg}`}>{title}</p>
+                {children && <div className="text-[#5f5e5b] mt-0.5">{children}</div>}
+            </div>
+        </div>
+    );
+};
+
 /* ──────────────────────────────────────────────────────────────────────── */
 
 const CreateAccount: React.FC = () => {
-    const { isDark } = useTheme();
     const {
         form,
         updateField,
@@ -155,57 +169,27 @@ const CreateAccount: React.FC = () => {
         if (!checked) return null;
         if (!checked.spReachable) {
             return (
-                <div
-                    className={`flex items-start gap-3 rounded-xl p-4 border-l-4 ${
-                        isDark
-                            ? 'bg-red-900/30 border-red-500 text-red-200'
-                            : 'bg-red-50 border-red-500 text-red-800'
-                    }`}
-                >
-                    <ExclamationTriangleIcon className="w-5 h-5 mt-0.5 shrink-0" />
-                    <div>
-                        <p className="font-semibold">Không kết nối được bosConfigure</p>
-                        <p className="text-sm mt-1">Liên hệ kỹ thuật để kiểm tra.</p>
-                    </div>
-                </div>
+                <Notice tone="error" title="Không kết nối được bosConfigure">
+                    <p>Liên hệ kỹ thuật để kiểm tra.</p>
+                </Notice>
             );
         }
         if (checked.isExistingCustomer) {
             return (
-                <div
-                    className={`flex items-start gap-3 rounded-xl p-4 border-l-4 ${
-                        isDark
-                            ? 'bg-amber-900/30 border-amber-500 text-amber-100'
-                            : 'bg-amber-50 border-amber-500 text-amber-800'
-                    }`}
-                >
-                    <InformationCircleIcon className="w-5 h-5 mt-0.5 shrink-0" />
-                    <div className="text-sm">
-                        <p className="font-semibold">MST đã có tài khoản</p>
-                        <p>
-                            Server hiện tại: <strong>{checked.sideServer}</strong>. Nếu muốn cập nhật
-                            thông tin, bật <em>"Cho phép cập nhật"</em> dưới đây.
-                        </p>
-                    </div>
-                </div>
+                <Notice tone="warning" title="MST đã có tài khoản">
+                    <p>
+                        Server hiện tại: <strong className="text-[#2F3437]">{checked.sideServer}</strong>.
+                        Nếu muốn cập nhật thông tin, bật «Cho phép cập nhật» dưới đây.
+                    </p>
+                </Notice>
             );
         }
         return (
-            <div
-                className={`flex items-start gap-3 rounded-xl p-4 border-l-4 ${
-                    isDark
-                        ? 'bg-emerald-900/30 border-emerald-500 text-emerald-100'
-                        : 'bg-emerald-50 border-emerald-500 text-emerald-800'
-                }`}
-            >
-                <CheckCircleIcon className="w-5 h-5 mt-0.5 shrink-0" />
-                <div className="text-sm">
-                    <p className="font-semibold">MST chưa có tài khoản — có thể cấp mới</p>
-                    <p>
-                        Server cấp TK: <strong>{checked.iNVnew || checked.INVnew}</strong>
-                    </p>
-                </div>
-            </div>
+            <Notice tone="success" title="MST chưa có tài khoản — có thể cấp mới">
+                <p>
+                    Server cấp TK: <strong className="text-[#2F3437]">{checked.iNVnew || checked.INVnew}</strong>
+                </p>
+            </Notice>
         );
     };
 
@@ -214,35 +198,22 @@ const CreateAccount: React.FC = () => {
         if (!result) return null;
         const ok = result.isSuccess;
         return (
-            <div
-                className={`rounded-xl p-5 border-l-4 ${
-                    ok
-                        ? isDark
-                            ? 'bg-emerald-900/30 border-emerald-500'
-                            : 'bg-emerald-50 border-emerald-500'
-                        : isDark
-                        ? 'bg-red-900/30 border-red-500'
-                        : 'bg-red-50 border-red-500'
-                }`}
-            >
-                <p className={`font-semibold ${ok ? 'text-emerald-600' : 'text-red-600'}`}>
-                    {ok ? '✅ Cấp tài khoản thành công' : '❌ Cấp tài khoản thất bại'}
+            <div className={`rounded-md p-5 ${ok ? 'bg-[#EDF3EC]' : 'bg-[#FDEBEC]'}`}>
+                <p className={`font-medium flex items-center gap-2 ${ok ? 'text-[#346538]' : 'text-[#9F2F2D]'}`}>
+                    {ok ? <CheckCircleIcon className="w-5 h-5" /> : <ExclamationTriangleIcon className="w-5 h-5" />}
+                    {ok ? 'Cấp tài khoản thành công' : 'Cấp tài khoản thất bại'}
                 </p>
-                <p className={`text-sm mt-1 ${isDark ? 'text-gray-200' : 'text-gray-700'}`}>
+                <p className="text-sm mt-1.5 text-[#5f5e5b]">
                     {result.message}
                 </p>
                 <div className="mt-3 grid grid-cols-2 md:grid-cols-4 gap-2 text-xs">
-                    <Step label="Check"     ok={!!result.checkOK} isDark={isDark} />
-                    <Step label="Database"  ok={!!result.databaseOK} isDark={isDark} />
-                    <Step label="WebApp"    ok={!!result.webAppOK} isDark={isDark} />
-                    <Step label="WinApp"    ok={!!result.windowsAppOK} isDark={isDark} />
+                    <Step label="Check"     ok={!!result.checkOK} />
+                    <Step label="Database"  ok={!!result.databaseOK} />
+                    <Step label="WebApp"    ok={!!result.webAppOK} />
+                    <Step label="WinApp"    ok={!!result.windowsAppOK} />
                 </div>
                 {result.errorDetail && (
-                    <pre
-                        className={`mt-3 text-xs whitespace-pre-wrap rounded p-2 ${
-                            isDark ? 'bg-slate-900 text-red-200' : 'bg-white text-red-700'
-                        }`}
-                    >
+                    <pre className="mt-3 text-xs whitespace-pre-wrap rounded-md p-3 bg-white border border-[#EAEAEA] text-[#9F2F2D] font-mono overflow-x-auto">
                         {result.errorDetail}
                     </pre>
                 )}
@@ -252,46 +223,36 @@ const CreateAccount: React.FC = () => {
 
     /* ─── Render ──────────────────────────────────────────────────────── */
     return (
-        <div className="max-w-5xl mx-auto">
+        <div className="max-w-4xl mx-auto">
             {/* Header */}
-            <div className="mb-6 flex items-center gap-3">
-                <div className="w-12 h-12 rounded-xl flex items-center justify-center bg-gradient-to-br from-indigo-500 to-purple-600 shadow">
-                    <BuildingOffice2Icon className="w-7 h-7 text-white" />
-                </div>
-                <div>
-                    <h2 className={`text-2xl font-bold ${isDark ? 'text-white' : 'text-gray-800'}`}>
-                        Cấp tài khoản WinInvoice
-                    </h2>
-                    <p className={`text-sm ${isDark ? 'text-gray-400' : 'text-gray-500'}`}>
-                        Nhập MST → hệ thống tự kiểm tra và fill thông tin từ database.
-                    </p>
-                </div>
+            <div className="pb-6 mb-6 border-b border-[#EAEAEA]">
+                <h1 className="text-2xl md:text-[28px] font-semibold tracking-tight text-[#111111]">
+                    Cấp tài khoản WinInvoice
+                </h1>
+                <p className="text-sm text-[#787774] mt-1 max-w-[65ch]">
+                    Nhập MST, hệ thống tự kiểm tra và điền thông tin từ database.
+                </p>
             </div>
 
             {/* Step 1: MST */}
-            <div
-                className={`rounded-2xl shadow-md p-6 mb-6 ${
-                    isDark ? 'bg-slate-800' : 'bg-white'
-                }`}
-            >
-                <p className={`text-sm font-semibold mb-3 ${isDark ? 'text-indigo-300' : 'text-indigo-600'}`}>
-                    Bước 1 — Kiểm tra MST
-                </p>
+            <div className="rounded-lg bg-white border border-[#EAEAEA] p-6 mb-4">
+                <div className="flex items-center gap-2 mb-4">
+                    <span className="w-6 h-6 rounded-full bg-[#111111] text-white text-xs font-semibold flex items-center justify-center">1</span>
+                    <p className="text-sm font-medium text-[#111111]">Kiểm tra MST</p>
+                </div>
                 <div className="grid grid-cols-1 md:grid-cols-[1fr_240px_auto] gap-3 items-start">
                     <Field
-                        isDark={isDark}
                         label="Mã số thuế"
                         icon={IdentificationIcon}
                         value={form.maSoThue}
                         onChange={(v) => updateField('maSoThue', formatMstInput(v))}
-                        placeholder="VD: 0312303803 hoặc 0312303803-995"
+                        placeholder="0312303803 hoặc 0312303803-995"
                         required
                         inputMode="numeric"
                         maxLength={14}
                         error={mstError}
                     />
                     <Field
-                        isDark={isDark}
                         label="CMND/CCCD (nếu có)"
                         icon={IdentificationIcon}
                         value={form.cmnD_CCCD}
@@ -301,11 +262,11 @@ const CreateAccount: React.FC = () => {
                         maxLength={12}
                         error={cccdError}
                     />
-                    <div className="pt-7">
+                    <div className="pt-[26px]">
                         <button
                             onClick={checkAndFill}
                             disabled={!canCheck}
-                            className="h-[42px] px-5 rounded-lg font-semibold text-white bg-gradient-to-r from-indigo-500 to-purple-600 hover:from-indigo-600 hover:to-purple-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 shadow"
+                            className="h-[38px] px-4 rounded-md text-sm font-medium bg-[#111111] text-white hover:bg-[#333333] active:scale-[0.98] disabled:opacity-40 disabled:cursor-not-allowed flex items-center gap-2 transition-all duration-200 whitespace-nowrap"
                             title={
                                 !isValidMstDisplay(form.maSoThue)
                                     ? 'MST phải đủ 10 chữ số hoặc 10-3 (chi nhánh)'
@@ -316,13 +277,13 @@ const CreateAccount: React.FC = () => {
                         >
                             {checking ? (
                                 <>
-                                    <ArrowPathIcon className="w-5 h-5 animate-spin" />
-                                    Đang kiểm tra...
+                                    <ArrowPathIcon className="w-4 h-4 animate-spin" />
+                                    Đang kiểm tra
                                 </>
                             ) : (
                                 <>
-                                    <MagnifyingGlassIcon className="w-5 h-5" />
-                                    Kiểm tra & Fill
+                                    <MagnifyingGlassIcon className="w-4 h-4" />
+                                    Kiểm tra và điền
                                 </>
                             )}
                         </button>
@@ -333,22 +294,15 @@ const CreateAccount: React.FC = () => {
             </div>
 
             {/* Step 2: Form fill */}
-            <div
-                className={`rounded-2xl shadow-md p-6 mb-6 ${
-                    isDark ? 'bg-slate-800' : 'bg-white'
-                }`}
-            >
-                <p
-                    className={`text-sm font-semibold mb-4 ${
-                        isDark ? 'text-indigo-300' : 'text-indigo-600'
-                    }`}
-                >
-                    Bước 2 — Thông tin công ty (đã auto-fill từ database, có thể chỉnh)
-                </p>
+            <div className="rounded-lg bg-white border border-[#EAEAEA] p-6 mb-4">
+                <div className="flex items-center gap-2 mb-4">
+                    <span className="w-6 h-6 rounded-full bg-[#111111] text-white text-xs font-semibold flex items-center justify-center">2</span>
+                    <p className="text-sm font-medium text-[#111111]">Thông tin công ty</p>
+                    <span className="text-xs text-[#787774]">đã tự điền từ database, có thể chỉnh</span>
+                </div>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div className="md:col-span-2">
                         <Field
-                            isDark={isDark}
                             label="Tên công ty"
                             icon={BuildingOffice2Icon}
                             value={form.tenCongTy}
@@ -358,14 +312,12 @@ const CreateAccount: React.FC = () => {
                     </div>
                     <div className="md:col-span-2">
                         <Field
-                            isDark={isDark}
                             label="Địa chỉ"
                             value={form.diaChi}
                             onChange={(v) => updateField('diaChi', v)}
                         />
                     </div>
                     <Field
-                        isDark={isDark}
                         label="Email"
                         icon={EnvelopeIcon}
                         value={form.email}
@@ -373,7 +325,6 @@ const CreateAccount: React.FC = () => {
                         type="email"
                     />
                     <Field
-                        isDark={isDark}
                         label="Số điện thoại"
                         icon={PhoneIcon}
                         value={form.soDienThoai}
@@ -382,21 +333,18 @@ const CreateAccount: React.FC = () => {
                         maxLength={15}
                     />
                     <Field
-                        isDark={isDark}
                         label="Website"
                         icon={GlobeAltIcon}
                         value={form.website}
                         onChange={(v) => updateField('website', v)}
                     />
                     <Field
-                        isDark={isDark}
                         label="Người ủy quyền / Fax"
                         icon={UserIcon}
                         value={form.uyQuyen}
                         onChange={(v) => updateField('uyQuyen', v)}
                     />
                     <Field
-                        isDark={isDark}
                         label="Số tài khoản NH"
                         icon={BanknotesIcon}
                         value={form.soTaiKhoanNH}
@@ -404,7 +352,6 @@ const CreateAccount: React.FC = () => {
                         inputMode="numeric"
                     />
                     <Field
-                        isDark={isDark}
                         label="Tên ngân hàng"
                         value={form.tenNganHang}
                         onChange={(v) => updateField('tenNganHang', v)}
@@ -412,25 +359,16 @@ const CreateAccount: React.FC = () => {
                 </div>
 
                 {/* AllowUpdate */}
-                <label
-                    className={`flex items-center gap-3 mt-5 px-4 py-3 rounded-lg border cursor-pointer ${
-                        isDark
-                            ? 'bg-slate-700/40 border-slate-600 text-gray-200'
-                            : 'bg-gray-50 border-gray-200 text-gray-700'
-                    }`}
-                >
+                <label className="flex items-center gap-3 mt-5 px-4 py-3 rounded-md bg-[#F7F6F3] border border-[#EAEAEA] cursor-pointer hover:bg-[#F1F0EC] transition-colors duration-150">
                     <input
                         type="checkbox"
                         checked={form.allowUpdate === '1'}
                         onChange={(e) => updateField('allowUpdate', e.target.checked ? '1' : '0')}
-                        className="w-5 h-5 accent-indigo-600"
+                        className="w-4 h-4 accent-[#111111]"
                     />
-                    <span className="text-sm">
-                        <strong>Cho phép cập nhật</strong> nếu MST đã có tài khoản
-                        <span className={isDark ? 'text-gray-400' : 'text-gray-500'}>
-                            {' '}
-                            (AllowUpdate = 1)
-                        </span>
+                    <span className="text-sm text-[#2F3437]">
+                        <span className="font-medium">Cho phép cập nhật</span> nếu MST đã có tài khoản
+                        <span className="text-[#787774]"> (AllowUpdate = 1)</span>
                     </span>
                 </label>
             </div>
@@ -441,7 +379,7 @@ const CreateAccount: React.FC = () => {
              *  - Sau khi check, NEW     → hiện nút (cấp mới)
              *  - Sau khi check, EXISTED → ẩn nút, chỉ hiển thị notice; bật AllowUpdate=1 thì nút hiện lại với label "Cập nhật tài khoản"
              */}
-            <div className="flex flex-wrap items-center gap-3 mb-6">
+            <div className="flex flex-wrap items-center gap-3 mb-4">
                 {(() => {
                     const isExisted = !!checked?.isExistingCustomer;
                     const allowUpdate = form.allowUpdate === '1';
@@ -449,21 +387,13 @@ const CreateAccount: React.FC = () => {
 
                     if (hideSubmit) {
                         return (
-                            <div
-                                className={`flex-1 min-w-[280px] flex items-start gap-3 rounded-xl px-4 py-3 border-l-4 ${
-                                    isDark
-                                        ? 'bg-amber-900/30 border-amber-500 text-amber-100'
-                                        : 'bg-amber-50 border-amber-500 text-amber-800'
-                                }`}
-                            >
-                                <InformationCircleIcon className="w-5 h-5 mt-0.5 shrink-0" />
-                                <div className="text-sm">
-                                    <p className="font-semibold">MST đã có tài khoản — không cần cấp mới.</p>
+                            <div className="flex-1 min-w-[280px]">
+                                <Notice tone="warning" title="MST đã có tài khoản — không cần cấp mới.">
                                     <p>
-                                        Nếu muốn cập nhật lại thông tin, hãy bật{' '}
-                                        <em>"Cho phép cập nhật"</em> bên trên rồi bấm "Cập nhật tài khoản".
+                                        Nếu muốn cập nhật lại thông tin, hãy bật «Cho phép cập nhật» bên trên
+                                        rồi bấm «Cập nhật tài khoản».
                                     </p>
-                                </div>
+                                </Notice>
                             </div>
                         );
                     }
@@ -473,16 +403,16 @@ const CreateAccount: React.FC = () => {
                         <button
                             onClick={submitCreateAccount}
                             disabled={submitting || !isValidMstDisplay(form.maSoThue) || !form.tenCongTy}
-                            className="px-6 py-2.5 rounded-lg font-semibold text-white bg-gradient-to-r from-emerald-500 to-emerald-600 hover:from-emerald-600 hover:to-emerald-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 shadow"
+                            className="px-5 py-2.5 rounded-md text-sm font-medium bg-[#111111] text-white hover:bg-[#333333] active:scale-[0.98] disabled:opacity-40 disabled:cursor-not-allowed flex items-center gap-2 transition-all duration-200"
                         >
                             {submitting ? (
                                 <>
-                                    <ArrowPathIcon className="w-5 h-5 animate-spin" />
-                                    Đang {isExisted && allowUpdate ? 'cập nhật' : 'cấp'}...
+                                    <ArrowPathIcon className="w-4 h-4 animate-spin" />
+                                    Đang {isExisted && allowUpdate ? 'cập nhật' : 'cấp'}
                                 </>
                             ) : (
                                 <>
-                                    <PaperAirplaneIcon className="w-5 h-5" />
+                                    <PaperAirplaneIcon className="w-4 h-4" />
                                     {label}
                                 </>
                             )}
@@ -491,11 +421,7 @@ const CreateAccount: React.FC = () => {
                 })()}
                 <button
                     onClick={resetAll}
-                    className={`px-4 py-2.5 rounded-lg font-medium transition ${
-                        isDark
-                            ? 'bg-slate-700 text-gray-200 hover:bg-slate-600'
-                            : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                    }`}
+                    className="px-4 py-2.5 rounded-md text-sm text-[#5f5e5b] bg-white border border-[#EAEAEA] hover:bg-[#F7F6F3] hover:text-[#111111] active:scale-[0.98] transition-all duration-200"
                 >
                     Làm mới form
                 </button>
@@ -506,28 +432,16 @@ const CreateAccount: React.FC = () => {
     );
 };
 
-const Step = ({
-    label,
-    ok,
-    isDark,
-}: {
-    label: string;
-    ok: boolean;
-    isDark: boolean;
-}) => (
+const Step = ({ label, ok }: { label: string; ok: boolean }) => (
     <div
-        className={`flex items-center justify-center gap-1 px-3 py-1.5 rounded ${
-            ok
-                ? isDark
-                    ? 'bg-emerald-900/50 text-emerald-300'
-                    : 'bg-emerald-100 text-emerald-700'
-                : isDark
-                ? 'bg-slate-700 text-gray-400'
-                : 'bg-gray-100 text-gray-500'
+        className={`flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-md ${
+            ok ? 'bg-white text-[#346538] border border-[#cfdecd]' : 'bg-white/60 text-[#a8a6a1] border border-[#EAEAEA]'
         }`}
     >
-        <span className="font-semibold">{ok ? '✓' : '○'}</span>
-        <span>{label}</span>
+        {ok
+            ? <CheckCircleIcon className="w-3.5 h-3.5" />
+            : <span className="w-3.5 h-3.5 rounded-full border border-[#d4d2cc] inline-block" />}
+        <span className="font-medium">{label}</span>
     </div>
 );
 

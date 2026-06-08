@@ -6,23 +6,25 @@ import {
     ChevronDownIcon,
     UserGroupIcon,
     UserIcon,
-    BuildingOffice2Icon,
     MagnifyingGlassIcon,
     XMarkIcon,
+    BriefcaseIcon,
+    StarIcon,
+    TagIcon,
 } from '@heroicons/react/24/outline';
 import { getSalesHierarchy, SalesHierarchyNode } from '../../api/adminService';
 
-/* ─── Level color mapping ──────────────────────────────────────────────── */
+/* ─── Level style mapping — muted pastel, icon thay emoji ──────────────── */
 
-const levelStyle: Record<string, { bg: string; text: string; border: string; icon: string }> = {
-    MNG:     { bg: 'bg-rose-500/15', text: 'text-rose-300', border: 'border-rose-500/30', icon: '👑' },
-    SUP:     { bg: 'bg-violet-500/15', text: 'text-violet-300', border: 'border-violet-500/30', icon: '⭐' },
-    TEAM:    { bg: 'bg-indigo-500/15', text: 'text-indigo-300', border: 'border-indigo-500/30', icon: '🏷️' },
-    'TDV/CTV': { bg: 'bg-cyan-500/15', text: 'text-cyan-300', border: 'border-cyan-500/30', icon: '👤' },
+const levelStyle: Record<string, { bg: string; text: string; Icon: React.ComponentType<{ className?: string }> }> = {
+    MNG:       { bg: 'bg-[#FDEBEC]', text: 'text-[#9F2F2D]', Icon: BriefcaseIcon },
+    SUP:       { bg: 'bg-[#FBF3DB]', text: 'text-[#956400]', Icon: StarIcon },
+    TEAM:      { bg: 'bg-[#E1F3FE]', text: 'text-[#1F6C9F]', Icon: TagIcon },
+    'TDV/CTV': { bg: 'bg-[#EDF3EC]', text: 'text-[#346538]', Icon: UserIcon },
 };
 
 const getLevelStyle = (level: string) =>
-    levelStyle[level] || { bg: 'bg-white/5', text: 'text-gray-300', border: 'border-white/10', icon: '•' };
+    levelStyle[level] || { bg: 'bg-[#F1F0EC]', text: 'text-[#5f5e5b]', Icon: UserIcon };
 
 /* ─── Search/Filter helpers ─────────────────────────────────────────────── */
 
@@ -83,8 +85,8 @@ const TreeNode: React.FC<{
     return (
         <div className="select-none">
             <div
-                className={`group flex items-center gap-2 py-1.5 px-2 rounded-lg hover:bg-white/[0.04] transition-colors cursor-pointer ${
-                    isHighlighted ? 'bg-yellow-500/10 ring-1 ring-yellow-500/30' : ''
+                className={`group flex items-center gap-2 py-1.5 px-2 rounded-md hover:bg-[#F7F6F3] transition-colors duration-150 cursor-pointer ${
+                    isHighlighted ? 'bg-[#FBF3DB]' : ''
                 }`}
                 style={{ paddingLeft: `${depth * 20 + 8}px` }}
                 onClick={() => hasChildren && setExpanded(!expanded)}
@@ -93,43 +95,41 @@ const TreeNode: React.FC<{
                 <span className="w-4 h-4 flex items-center justify-center flex-shrink-0">
                     {hasChildren ? (
                         expanded ? (
-                            <ChevronDownIcon className="w-3.5 h-3.5 text-gray-400" />
+                            <ChevronDownIcon className="w-3.5 h-3.5 text-[#787774]" />
                         ) : (
-                            <ChevronRightIcon className="w-3.5 h-3.5 text-gray-500" />
+                            <ChevronRightIcon className="w-3.5 h-3.5 text-[#a8a6a1]" />
                         )
                     ) : (
-                        <span className="w-1.5 h-1.5 rounded-full bg-gray-600" />
+                        <span className="w-1 h-1 rounded-full bg-[#d4d2cc]" />
                     )}
                 </span>
 
-                {/* Icon */}
-                <span className="text-sm flex-shrink-0">{style.icon}</span>
-
-                {/* Level badge */}
-                <span className={`px-1.5 py-0.5 text-[10px] font-bold rounded border ${style.bg} ${style.text} ${style.border} flex-shrink-0`}>
+                {/* Level badge with icon */}
+                <span className={`inline-flex items-center gap-1 px-1.5 py-0.5 text-[10px] font-medium uppercase tracking-[0.05em] rounded-full flex-shrink-0 ${style.bg} ${style.text}`}>
+                    <style.Icon className="w-3 h-3" />
                     {node.level}
                 </span>
 
                 {/* Name */}
-                <span className="text-sm text-gray-100 truncate font-medium">
+                <span className="text-sm text-[#111111] truncate font-medium">
                     {node.name.replace(/^(MNG|SUP|TEAM|TDV\/CTV)\s*-\s*/, '')}
                 </span>
 
                 {/* ID */}
-                <span className="text-[10px] font-mono text-gray-500 flex-shrink-0 opacity-0 group-hover:opacity-100 transition-opacity">
+                <span className="text-[10px] font-mono text-[#a8a6a1] flex-shrink-0 opacity-0 group-hover:opacity-100 transition-opacity duration-150">
                     #{node.id}
                 </span>
 
                 {/* Login name */}
                 {node.loginName && (
-                    <span className="text-[10px] text-indigo-400/60 flex-shrink-0 opacity-0 group-hover:opacity-100 transition-opacity ml-auto">
+                    <span className="text-[10px] text-[#787774] flex-shrink-0 opacity-0 group-hover:opacity-100 transition-opacity duration-150 ml-auto">
                         @{node.loginName}
                     </span>
                 )}
 
                 {/* Children count */}
                 {hasChildren && (
-                    <span className="text-[10px] text-gray-500 flex-shrink-0 ml-1">
+                    <span className="text-[10px] text-[#a8a6a1] flex-shrink-0 ml-1" style={{ fontVariantNumeric: 'tabular-nums' }}>
                         ({node.children.length})
                     </span>
                 )}
@@ -140,7 +140,7 @@ const TreeNode: React.FC<{
                 <div className="relative">
                     {/* Vertical line connector */}
                     <div
-                        className="absolute top-0 bottom-2 border-l border-white/10"
+                        className="absolute top-0 bottom-2 border-l border-[#EAEAEA]"
                         style={{ left: `${depth * 20 + 20}px` }}
                     />
                     {node.children.map(child => (
@@ -204,13 +204,10 @@ const AdminSalesTree: React.FC = () => {
     return (
         <div className="max-w-[1200px] mx-auto">
             {/* Header */}
-            <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-3 mb-5">
+            <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-3 pb-6 mb-6 border-b border-[#EAEAEA]">
                 <div>
-                    <h1 className="text-2xl md:text-3xl font-bold flex items-center gap-2">
-                        <BuildingOffice2Icon className="w-7 h-7 text-indigo-400" />
-                        Cây ASM — Sales Hierarchy
-                    </h1>
-                    <p className="text-sm text-gray-400 mt-1">
+                    <h1 className="text-2xl md:text-[28px] font-semibold tracking-tight text-[#111111]">Cây ASM</h1>
+                    <p className="text-sm text-[#787774] mt-1 max-w-[65ch]">
                         Xem cấu trúc quản lý kinh doanh theo cây phân cấp.
                     </p>
                 </div>
@@ -221,13 +218,13 @@ const AdminSalesTree: React.FC = () => {
                         value={inputId}
                         onChange={e => setInputId(e.target.value)}
                         onKeyDown={e => { if (e.key === 'Enter') fetchTree(inputId); }}
-                        placeholder="Manager ID (vd: 21:000)"
-                        className="w-44 px-3 py-2 rounded-xl bg-white/5 border border-white/10 text-sm placeholder:text-gray-500 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                        placeholder="Manager ID, ví dụ 21:000"
+                        className="w-48 px-3 py-2 rounded-md bg-white border border-[#EAEAEA] text-sm text-[#2F3437] placeholder:text-[#a8a6a1] focus:outline-none focus:border-[#111111] transition-colors duration-200 font-mono"
                     />
                     <button
                         onClick={() => fetchTree(inputId)}
                         disabled={loading}
-                        className="px-4 py-2 rounded-xl text-sm font-semibold bg-indigo-500/20 text-indigo-200 hover:bg-indigo-500/30 transition-colors flex items-center gap-2"
+                        className="px-4 py-2 rounded-md text-sm font-medium bg-[#111111] text-white hover:bg-[#333333] active:scale-[0.98] disabled:opacity-40 transition-all duration-200 flex items-center gap-2"
                     >
                         <ArrowPathIcon className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
                         Tải
@@ -237,20 +234,20 @@ const AdminSalesTree: React.FC = () => {
 
             {/* Stats badges */}
             {Object.keys(stats).length > 0 && (
-                <div className="flex flex-wrap gap-2 mb-4">
+                <div className="flex flex-wrap gap-2 mb-5">
                     {Object.entries(stats).map(([level, count]) => {
                         const s = getLevelStyle(level);
                         return (
-                            <div key={level} className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl border ${s.bg} ${s.border}`}>
-                                <span className="text-sm">{s.icon}</span>
-                                <span className={`text-xs font-bold ${s.text}`}>{level}</span>
-                                <span className="text-xs text-gray-300 font-semibold">{count}</span>
+                            <div key={level} className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full ${s.bg}`}>
+                                <s.Icon className={`w-3.5 h-3.5 ${s.text}`} />
+                                <span className={`text-xs font-medium uppercase tracking-[0.05em] ${s.text}`}>{level}</span>
+                                <span className={`text-xs font-semibold ${s.text}`} style={{ fontVariantNumeric: 'tabular-nums' }}>{count}</span>
                             </div>
                         );
                     })}
-                    <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl border bg-white/5 border-white/10">
-                        <UserGroupIcon className="w-4 h-4 text-gray-400" />
-                        <span className="text-xs text-gray-300 font-semibold">
+                    <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white border border-[#EAEAEA]">
+                        <UserGroupIcon className="w-3.5 h-3.5 text-[#787774]" />
+                        <span className="text-xs text-[#2F3437] font-medium" style={{ fontVariantNumeric: 'tabular-nums' }}>
                             Tổng: {Object.values(stats).reduce((a, b) => a + b, 0)}
                         </span>
                     </div>
@@ -260,50 +257,65 @@ const AdminSalesTree: React.FC = () => {
             {/* Search */}
             <div className="mb-4">
                 <div className="relative w-full md:w-80">
-                    <MagnifyingGlassIcon className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+                    <MagnifyingGlassIcon className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-[#787774]" />
                     <input
                         type="text"
                         value={search}
                         onChange={e => setSearch(e.target.value)}
-                        placeholder="Tìm theo mã NV, tên, login..."
-                        className="w-full pl-9 pr-8 py-2 rounded-xl bg-white/5 border border-white/10 text-sm placeholder:text-gray-500 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                        placeholder="Tìm theo mã NV, tên, login"
+                        className="w-full pl-9 pr-8 py-2 rounded-md bg-white border border-[#EAEAEA] text-sm text-[#2F3437] placeholder:text-[#a8a6a1] focus:outline-none focus:border-[#111111] transition-colors duration-200"
                     />
                     {search && (
                         <button
                             onClick={() => setSearch('')}
-                            className="absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-200"
+                            aria-label="Xóa tìm kiếm"
+                            className="absolute right-2.5 top-1/2 -translate-y-1/2 text-[#a8a6a1] hover:text-[#111111] transition-colors duration-150"
                         >
                             <XMarkIcon className="w-4 h-4" />
                         </button>
                     )}
                 </div>
                 {isSearching && (
-                    <p className="text-xs text-gray-500 mt-1.5">
-                        Tìm thấy <span className="text-indigo-300 font-semibold">{highlightIds.size}</span> kết quả
+                    <p className="text-xs text-[#787774] mt-1.5">
+                        Tìm thấy <span className="text-[#111111] font-medium" style={{ fontVariantNumeric: 'tabular-nums' }}>{highlightIds.size}</span> kết quả
                         {filteredTree.length === 0 && ' — không khớp'}
                     </p>
                 )}
             </div>
 
             {/* Tree container */}
-            <div className="rounded-2xl bg-white/5 backdrop-blur-xl border border-white/10 shadow-xl overflow-hidden">
-                <div className="px-4 py-3 border-b border-white/10 flex items-center gap-2">
-                    <UserGroupIcon className="w-4 h-4 text-indigo-300" />
-                    <span className="text-sm font-semibold text-indigo-200">Cấu trúc phân cấp</span>
-                    <span className="text-xs text-gray-500 ml-auto">Click để mở/đóng nhánh</span>
+            <div className="rounded-lg bg-white border border-[#EAEAEA] overflow-hidden">
+                <div className="px-4 py-3 border-b border-[#EAEAEA] flex items-center gap-2 bg-[#FBFBFA]">
+                    <UserGroupIcon className="w-4 h-4 text-[#787774]" />
+                    <span className="text-sm font-medium text-[#111111]">Cấu trúc phân cấp</span>
+                    <span className="text-xs text-[#a8a6a1] ml-auto">Click để mở hoặc đóng nhánh</span>
                 </div>
 
                 <div className="p-3 max-h-[70vh] overflow-y-auto">
                     {loading && (
-                        <div className="flex items-center justify-center py-12 gap-2 text-gray-400">
-                            <ArrowPathIcon className="w-5 h-5 animate-spin" />
-                            <span>Đang tải cây ASM...</span>
+                        <div className="space-y-1 py-2">
+                            {Array.from({ length: 8 }).map((_, i) => (
+                                <div key={i} className="flex items-center gap-2 py-1.5 px-2" style={{ paddingLeft: `${(i % 3) * 20 + 8}px` }}>
+                                    <div className="w-4 h-4 rounded bg-[#EFEEEA] animate-pulse" />
+                                    <div className="h-4 rounded-full bg-[#EFEEEA] animate-pulse w-14" />
+                                    <div className="h-3.5 rounded bg-[#EFEEEA] animate-pulse" style={{ width: 120 + (i * 37) % 100 }} />
+                                </div>
+                            ))}
                         </div>
                     )}
                     {!loading && filteredTree.length === 0 && (
-                        <div className="flex flex-col items-center justify-center py-12 text-gray-500">
-                            <UserIcon className="w-10 h-10 mb-2 text-gray-600" />
-                            <span>{isSearching ? 'Không tìm thấy kết quả' : 'Không có dữ liệu'}</span>
+                        <div className="flex flex-col items-center justify-center py-14 gap-3 text-center">
+                            <div className="w-12 h-12 rounded-lg bg-[#F7F6F3] border border-[#EAEAEA] flex items-center justify-center">
+                                <UserIcon className="w-6 h-6 text-[#a8a6a1]" />
+                            </div>
+                            <div>
+                                <p className="text-sm font-medium text-[#2F3437]">
+                                    {isSearching ? 'Không tìm thấy kết quả' : 'Không có dữ liệu'}
+                                </p>
+                                <p className="text-xs text-[#787774] mt-1">
+                                    {isSearching ? 'Thử từ khóa khác.' : 'Nhập Manager ID và bấm Tải.'}
+                                </p>
+                            </div>
                         </div>
                     )}
                     {!loading && filteredTree.map(node => (
