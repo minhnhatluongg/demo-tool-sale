@@ -69,31 +69,38 @@ export const useCreateAccount = () => {
         const mstForBE = form.maSoThue.trim();
         const cccd = form.cmnD_CCCD.trim().replace(/\D/g, '');
 
-        if (!mstForBE) {
-            toast.error('Vui lòng nhập MST!');
+        // Cho phép kiểm tra bằng MST HOẶC CCCD (cá nhân/hộ KD dùng CCCD thay MST).
+        if (!mstForBE && !cccd) {
+            toast.error('Vui lòng nhập MST hoặc CCCD/CMND!');
             return;
         }
-        // Format hợp lệ: 10 số liền HOẶC 10-3 (vd 0312303803-995).
-        const validFormat = /^\d{10}$/.test(mstForBE) || /^\d{10}-\d{3}$/.test(mstForBE);
-        if (!validFormat) {
-            toast.error(
-                `MST phải có 10 chữ số hoặc dạng 10-3 (vd 0312303803-995). Đang nhập: "${mstForBE}".`
-            );
-            return;
+        // Nếu CÓ nhập MST thì phải đúng định dạng: 10 số liền HOẶC 10-3 (vd 0312303803-995).
+        if (mstForBE) {
+            const validFormat = /^\d{10}$/.test(mstForBE) || /^\d{10}-\d{3}$/.test(mstForBE);
+            if (!validFormat) {
+                toast.error(
+                    `MST phải có 10 chữ số hoặc dạng 10-3 (vd 0312303803-995). Đang nhập: "${mstForBE}".`
+                );
+                return;
+            }
         }
-        // CCCD optional, nhưng nếu có phải đúng độ dài
+        // CCCD: nếu có phải đúng độ dài 9 hoặc 12
         if (cccd && cccd.length !== 9 && cccd.length !== 12) {
             toast.error(`CCCD/CMND phải có 9 hoặc 12 chữ số (đang ${cccd.length}).`);
             return;
         }
+
+        // Định danh gửi BE: ưu tiên MST; nếu trống thì dùng CCCD.
+        const idForBE = mstForBE || cccd;
+        const idLabel = mstForBE ? `MST ${mstForBE}` : `CCCD ${cccd}`;
 
         setChecking(true);
         setChecked(null);
         setResult(null);
 
         try {
-            // 1. check-server — gửi nguyên MST có dấu '-' nếu là chi nhánh
-            const check = await checkServer(mstForBE, form.cmnD_CCCD.trim());
+            // 1. check-server — gửi MST (giữ dấu '-' nếu là chi nhánh) hoặc CCCD khi không có MST
+            const check = await checkServer(idForBE, form.cmnD_CCCD.trim());
             setChecked(check);
 
             if (!check.spReachable) {
@@ -103,17 +110,17 @@ export const useCreateAccount = () => {
 
             if (check.isExistingCustomer) {
                 toast.success(
-                    `MST ${mstForBE} đã có tài khoản trên server ${check.sideServer}.`,
+                    `${idLabel} đã có tài khoản trên server ${check.sideServer}.`,
                     { duration: 4000 }
                 );
             } else {
-                toast.success('MST chưa có tài khoản — có thể cấp mới.');
+                toast.success(`${idLabel} chưa có tài khoản — có thể cấp mới.`);
             }
 
-            // 2. get-full-info-by-mst để auto-fill (cả 2 case đều cần) — cũng giữ dấu '-'
+            // 2. get-full-info để auto-fill (cả 2 case đều cần) — theo MST hoặc CCCD
             let info: TaxFullInfoForAccount | null = null;
             try {
-                info = await getCompanyInfoByMst(mstForBE);
+                info = await getCompanyInfoByMst(idForBE);
             } catch {
                 /* swallow — không có info vẫn cho nhập tay */
             }
@@ -121,7 +128,7 @@ export const useCreateAccount = () => {
             if (info) {
                 setForm(prev => ({
                     ...prev,
-                    maSoThue: mstForBE,
+                    maSoThue: mstForBE || prev.maSoThue,
                     cmnD_CCCD: info?.cusCMND_ID || prev.cmnD_CCCD,
                     tenCongTy: info?.sName || prev.tenCongTy,
                     diaChi: info?.address || prev.diaChi,
@@ -215,9 +222,13 @@ export const useCreateAccount = () => {
 function validate(form: CreateAccountForm, checked: CheckServerResponse | null): string[] {
     const errs: string[] = [];
     const mst = form.maSoThue.trim();
-    if (!mst) errs.push('MST không được để trống.');
-    else if (!/^\d{10}$/.test(mst) && !/^\d{10}-\d{3}$/.test(mst))
+    const cccd = form.cmnD_CCCD.trim().replace(/\D/g, '');
+    // Cần MST HOẶC CCCD (cá nhân/hộ KD dùng CCCD thay MST).
+    if (!mst && !cccd) errs.push('Cần nhập MST hoặc CCCD/CMND.');
+    if (mst && !/^\d{10}$/.test(mst) && !/^\d{10}-\d{3}$/.test(mst))
         errs.push('MST phải 10 chữ số hoặc dạng 10-3 (vd 0312303803-995).');
+    if (cccd && cccd.length !== 9 && cccd.length !== 12)
+        errs.push('CCCD/CMND phải 9 hoặc 12 chữ số.');
 
     if (!form.tenCongTy.trim()) errs.push('Tên công ty không được để trống.');
     if (form.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email))

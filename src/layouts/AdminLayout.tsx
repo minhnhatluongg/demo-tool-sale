@@ -12,7 +12,7 @@ import {
     BuildingOffice2Icon,
 } from '@heroicons/react/24/outline';
 
-/* Editorial minimalist layout: warm-white canvas, 1px hairline borders, no gradients */
+/* Editorial minimalist layout: soft blue-gray canvas, white cards, 1px hairline borders, no gradients */
 const AdminLayout: React.FC = () => {
     const { user, logout } = useAuth();
     const navigate = useNavigate();
@@ -32,9 +32,9 @@ const AdminLayout: React.FC = () => {
     ];
 
     return (
-        <div className="min-h-screen flex bg-[#F7F6F3] text-[#2F3437]">
+        <div className="min-h-screen flex bg-[#EDF0F4] text-[#2F3437]">
             {/* Sidebar */}
-            <aside className="w-60 flex-shrink-0 bg-[#FBFBFA] border-r border-[#EAEAEA] flex flex-col">
+            <aside className="w-60 flex-shrink-0 bg-[#F7F8FA] border-r border-[#E4E7EC] flex flex-col">
                 <div className="px-5 py-6 border-b border-[#EAEAEA]">
                     <p className="text-[11px] uppercase tracking-[0.12em] text-[#787774]">Admin console</p>
                     <p className="text-lg font-semibold text-[#111111] tracking-tight mt-0.5">ERP RC</p>

@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
+import { createPortal } from 'react-dom';
 import toast from 'react-hot-toast';
 import { Menu, MenuButton, MenuItem, MenuItems } from '@headlessui/react';
 import {
@@ -130,6 +131,79 @@ const SkeletonRow: React.FC = () => (
             </td>
         ))}
     </tr>
+);
+
+/* ─── Contract detail renderer (đẹp, không dump JSON thô) ──────────────── */
+
+const FIELD_LABELS: Record<string, string> = {
+    oid: 'OID', oDate: 'Ngày hợp đồng', cusName: 'Tên khách hàng', cusTax: 'MST',
+    cusAddress: 'Địa chỉ', cusTel: 'Điện thoại', cusEmail: 'Email',
+    cusPeople_Sign: 'Người đại diện ký', cusPeopleSign: 'Người đại diện ký',
+    cusPosition_BySign: 'Chức vụ', cmpnName: 'Đơn vị bán', cmpnTax: 'MST đơn vị bán',
+    saleEmID: 'Mã nhân viên', saleName: 'Nhân viên Sale', sampleID: 'Mẫu số',
+    descript_Cus: 'Ghi chú', descriptCus: 'Ghi chú', crt_Date: 'Ngày tạo', crtDate: 'Ngày tạo',
+    crt_User: 'Người tạo', crtUser: 'Người tạo', chgeDate: 'Ngày cập nhật',
+    currSignNumb: 'Trạng thái ký', invcSample: 'Mẫu số', invcSign: 'Ký hiệu',
+    invcFrm: 'Từ số', invcEnd: 'Đến số', isTT78: 'Theo TT78', isGiaHan: 'Gia hạn',
+    referenceInfo: 'Thông tin tham chiếu', mailAcc: 'Email nhận',
+};
+
+const prettifyKey = (k: string): string =>
+    FIELD_LABELS[k] ??
+    k.replace(/_/g, ' ')
+     .replace(/([a-z0-9])([A-Z])/g, '$1 $2')
+     .replace(/^./, c => c.toUpperCase());
+
+const renderPrimitive = (key: string, val: any): React.ReactNode => {
+    if (val === null || val === undefined || val === '')
+        return <span className="text-[#a8a6a1] italic">—</span>;
+    if (typeof val === 'boolean')
+        return val
+            ? <span className="inline-flex items-center gap-1 text-[#346538]"><CheckCircleIcon className="w-3.5 h-3.5" />Có</span>
+            : <span className="text-[#a8a6a1]">Không</span>;
+    const s = String(val);
+    if (/date|ngay/i.test(key) && /^\d{4}-\d{2}-\d{2}/.test(s)) {
+        const d = new Date(s);
+        if (!isNaN(d.getTime())) return d.toLocaleString('vi-VN');
+    }
+    return s;
+};
+
+const DetailRows: React.FC<{ obj: Record<string, any>; depth?: number }> = ({ obj, depth = 0 }) => (
+    <div className={depth === 0 ? 'divide-y divide-[#F1F0EC]' : 'mt-1 ml-1 pl-3 border-l-2 border-[#EAEAEA] space-y-0.5'}>
+        {Object.entries(obj).map(([key, val]) => {
+            const isObj = val !== null && typeof val === 'object' && !Array.isArray(val);
+            const isArr = Array.isArray(val);
+
+            if (isObj) {
+                return (
+                    <div key={key} className="py-2 px-3">
+                        <p className="text-[11px] font-semibold uppercase tracking-[0.06em] text-[#787774] mb-1">{prettifyKey(key)}</p>
+                        <DetailRows obj={val} depth={depth + 1} />
+                    </div>
+                );
+            }
+            if (isArr) {
+                return (
+                    <div key={key} className="py-2 px-3">
+                        <p className="text-[11px] font-semibold uppercase tracking-[0.06em] text-[#787774] mb-1">{prettifyKey(key)} ({val.length})</p>
+                        {val.length === 0
+                            ? <span className="text-[#a8a6a1] italic text-sm">— trống —</span>
+                            : val.map((item, i) =>
+                                item !== null && typeof item === 'object'
+                                    ? <DetailRows key={i} obj={item} depth={depth + 1} />
+                                    : <div key={i} className="text-sm text-[#2F3437] pl-1">{String(item)}</div>)}
+                    </div>
+                );
+            }
+            return (
+                <div key={key} className="grid grid-cols-[170px_1fr] gap-2 py-2 px-3 hover:bg-[#FBFBFA] text-sm transition-colors duration-150">
+                    <span className="text-[#787774] font-medium truncate" title={prettifyKey(key)}>{prettifyKey(key)}</span>
+                    <span className="text-[#2F3437] break-words">{renderPrimitive(key, val)}</span>
+                </div>
+            );
+        })}
+    </div>
 );
 
 /* ─── page ─────────────────────────────────────────────────────────────── */
@@ -616,7 +690,7 @@ const AdminContracts: React.FC = () => {
             </div>
 
             {/* Reason modal */}
-            {reasonModal && (
+            {reasonModal && createPortal(
                 <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 p-4">
                     <div className="w-full max-w-md rounded-lg bg-white border border-[#EAEAEA] shadow-[0_4px_24px_rgba(0,0,0,0.08)] p-6">
                         <h3 className="text-lg font-semibold tracking-tight text-[#111111] mb-1">
@@ -652,10 +726,10 @@ const AdminContracts: React.FC = () => {
                         </div>
                     </div>
                 </div>
-            )}
+            , document.body)}
 
             {/* Summary modal */}
-            {summaryModal && (
+            {summaryModal && createPortal(
                 <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 p-4">
                     <div className="w-full max-w-2xl max-h-[80vh] rounded-lg bg-white border border-[#EAEAEA] shadow-[0_4px_24px_rgba(0,0,0,0.08)] p-6 overflow-hidden flex flex-col">
                         <div className="flex items-center justify-between mb-1">
@@ -684,21 +758,26 @@ const AdminContracts: React.FC = () => {
                                 ))}
                             </div>
                         ) : summaryModal.data ? (
-                            <div className="flex-1 overflow-y-auto pr-1 divide-y divide-[#F1F0EC]">
-                                {Object.entries(summaryModal.data).map(([key, val]) => (
-                                    <div key={key} className="grid grid-cols-[180px_1fr] gap-2 py-2 px-3 hover:bg-[#FBFBFA] text-sm transition-colors duration-150">
-                                        <span className="text-[#787774] font-medium truncate" title={key}>{key}</span>
-                                        <span className="text-[#2F3437] break-all">
-                                            {val === null || val === undefined
-                                                ? <span className="text-[#a8a6a1] italic">null</span>
-                                                : typeof val === 'object'
-                                                    ? <pre className="text-xs bg-[#F7F6F3] border border-[#EAEAEA] rounded-md p-2 overflow-x-auto font-mono">{JSON.stringify(val, null, 2)}</pre>
-                                                    : String(val)
-                                            }
-                                        </span>
+                            (() => {
+                                const data: any = summaryModal.data;
+                                // Bóc lớp { contract: {...} } để hiển thị field hợp đồng ngay (không lồng dưới 1 header)
+                                const contractObj = data && typeof data === 'object' && data.contract && typeof data.contract === 'object'
+                                    ? data.contract : null;
+                                const primary = contractObj ?? data;
+                                const extras = contractObj
+                                    ? Object.fromEntries(Object.entries(data).filter(([k]) => k !== 'contract'))
+                                    : null;
+                                return (
+                                    <div className="flex-1 overflow-y-auto pr-1">
+                                        <DetailRows obj={primary} />
+                                        {extras && Object.keys(extras).length > 0 && (
+                                            <div className="mt-2 border-t border-[#EAEAEA]">
+                                                <DetailRows obj={extras} />
+                                            </div>
+                                        )}
                                     </div>
-                                ))}
-                            </div>
+                                );
+                            })()
                         ) : (
                             <p className="text-[#787774] text-center py-8">Không có dữ liệu</p>
                         )}
@@ -713,7 +792,7 @@ const AdminContracts: React.FC = () => {
                         </div>
                     </div>
                 </div>
-            )}
+            , document.body)}
         </div>
     );
 };
