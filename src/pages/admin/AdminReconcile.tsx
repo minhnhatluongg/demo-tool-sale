@@ -350,6 +350,7 @@ const AdminReconcile: React.FC = () => {
                                                         />
                                                     </th>
                                                     <th className="text-left font-medium px-3 py-2">OID</th>
+                                                    <th className="text-left font-medium px-3 py-2">Sale</th>
                                                     <th className="text-left font-medium px-3 py-2">Khách hàng</th>
                                                     <th className="text-left font-medium px-3 py-2">MST</th>
                                                     <th className="text-right font-medium px-3 py-2">Tổng tiền</th>
@@ -370,6 +371,9 @@ const AdminReconcile: React.FC = () => {
                                                             />
                                                         </td>
                                                         <td className="px-3 py-2 font-mono text-xs text-[#111111]">{r.oid}</td>
+                                                        <td className="px-3 py-2 whitespace-nowrap" title={r.saleEmID || ''}>
+                                                            {r.saleName || r.saleEmID || '—'}
+                                                        </td>
                                                         <td className="px-3 py-2 max-w-[220px] truncate" title={r.cusName || ''}>{r.cusName}</td>
                                                         <td className="px-3 py-2">{r.cusTax}</td>
                                                         <td className="px-3 py-2 text-right">{fmtMoney(r.sum_Amnt)}</td>
