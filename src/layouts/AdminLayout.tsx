@@ -1,5 +1,6 @@
 import React from 'react';
-import { NavLink, Outlet, useNavigate } from 'react-router-dom';
+import { NavLink, Outlet, useNavigate, useLocation } from 'react-router-dom';
+import { motion } from 'framer-motion';
 import { useAuth } from '../contexts/AuthContext';
 import {
     Squares2X2Icon,
@@ -10,12 +11,19 @@ import {
     UserGroupIcon,
     ExclamationTriangleIcon,
     BuildingOffice2Icon,
+    ArrowPathRoundedSquareIcon,
+    ScaleIcon,
 } from '@heroicons/react/24/outline';
 
-/* Editorial minimalist layout: warm-white canvas, 1px hairline borders, no gradients */
+/*
+ * Editorial minimalist layout — nâng cấp theo phong cách JolyUI:
+ * active-pill của sidebar trượt mượt giữa các mục (framer-motion layoutId),
+ * giữ nguyên bảng màu hairline light-only của admin console.
+ */
 const AdminLayout: React.FC = () => {
     const { user, logout } = useAuth();
     const navigate = useNavigate();
+    const location = useLocation();
 
     const handleLogout = () => {
         logout();
@@ -26,15 +34,17 @@ const AdminLayout: React.FC = () => {
         { to: '/admin/dashboard', label: 'Dashboard', icon: Squares2X2Icon },
         { to: '/admin/contracts', label: 'Hợp đồng', icon: DocumentTextIcon },
         { to: '/admin/expiring', label: 'Sắp hết hạn', icon: ExclamationTriangleIcon },
+        { to: '/admin/tvan', label: 'Gia hạn / Hủy TVAN', icon: ArrowPathRoundedSquareIcon },
+        { to: '/admin/reconcile', label: 'Đối soát bên thứ 3', icon: ScaleIcon },
         { to: '/admin/sales-tree', label: 'Cây ASM', icon: UserGroupIcon },
         { to: '/admin/create-account', label: 'Cấp TK WinInvoice', icon: BuildingOffice2Icon },
         { to: '/admin/logs', label: 'Logs', icon: DocumentMagnifyingGlassIcon },
     ];
 
     return (
-        <div className="min-h-screen flex bg-[#F7F6F3] text-[#2F3437]">
+        <div className="min-h-screen flex bg-[#EDF0F4] text-[#2F3437]">
             {/* Sidebar */}
-            <aside className="w-60 flex-shrink-0 bg-[#FBFBFA] border-r border-[#EAEAEA] flex flex-col">
+            <aside className="w-60 flex-shrink-0 bg-[#F7F8FA] border-r border-[#E4E7EC] flex flex-col">
                 <div className="px-5 py-6 border-b border-[#EAEAEA]">
                     <p className="text-[11px] uppercase tracking-[0.12em] text-[#787774]">Admin console</p>
                     <p className="text-lg font-semibold text-[#111111] tracking-tight mt-0.5">ERP RC</p>
@@ -43,20 +53,26 @@ const AdminLayout: React.FC = () => {
                 <nav className="px-3 py-4 flex-1 space-y-0.5">
                     {navItems.map(item => {
                         const Icon = item.icon;
+                        const isActive = location.pathname.startsWith(item.to);
                         return (
                             <NavLink
                                 key={item.to}
                                 to={item.to}
-                                className={({ isActive }) =>
-                                    `flex items-center gap-3 px-3 py-2 rounded-md text-sm transition-colors duration-200 focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#111111] ${
-                                        isActive
-                                            ? 'bg-[#EFEEEA] text-[#111111] font-medium'
-                                            : 'text-[#5f5e5b] hover:bg-[#F1F0EC] hover:text-[#111111]'
-                                    }`
-                                }
+                                className={`relative flex items-center gap-3 px-3 py-2 rounded-md text-sm transition-colors duration-200 focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#111111] ${
+                                    isActive
+                                        ? 'text-[#111111] font-medium'
+                                        : 'text-[#5f5e5b] hover:bg-[#F1F0EC] hover:text-[#111111]'
+                                }`}
                             >
-                                <Icon className="w-[18px] h-[18px]" strokeWidth={1.8} />
-                                {item.label}
+                                {isActive && (
+                                    <motion.span
+                                        layoutId="admin-nav-pill"
+                                        className="absolute inset-0 bg-[#EFEEEA] rounded-md"
+                                        transition={{ type: 'spring', stiffness: 500, damping: 35 }}
+                                    />
+                                )}
+                                <Icon className="relative z-10 w-[18px] h-[18px]" strokeWidth={1.8} />
+                                <span className="relative z-10">{item.label}</span>
                             </NavLink>
                         );
                     })}

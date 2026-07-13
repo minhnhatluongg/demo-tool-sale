@@ -159,9 +159,10 @@ const CreateAccount: React.FC = () => {
         return undefined;
     }, [form.cmnD_CCCD]);
 
+    // Cho phép kiểm tra khi có MST hợp lệ HOẶC CCCD/CMND đủ độ dài (9/12 số).
     const canCheck =
         !checking
-        && isValidMstDisplay(form.maSoThue)
+        && (isValidMstDisplay(form.maSoThue) || CCCD_LENGTHS.includes(form.cmnD_CCCD.length))
         && isValidCccdLength(form.cmnD_CCCD);
 
     /* ─── Status badge sau check ──────────────────────────────────────── */
@@ -242,18 +243,17 @@ const CreateAccount: React.FC = () => {
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-[1fr_240px_auto] gap-3 items-start">
                     <Field
-                        label="Mã số thuế"
+                        label="Mã số thuế (hoặc CCCD)"
                         icon={IdentificationIcon}
                         value={form.maSoThue}
                         onChange={(v) => updateField('maSoThue', formatMstInput(v))}
                         placeholder="0312303803 hoặc 0312303803-995"
-                        required
                         inputMode="numeric"
                         maxLength={14}
                         error={mstError}
                     />
                     <Field
-                        label="CMND/CCCD (nếu có)"
+                        label="CMND/CCCD"
                         icon={IdentificationIcon}
                         value={form.cmnD_CCCD}
                         onChange={(v) => updateField('cmnD_CCCD', onlyDigits(v))}
@@ -268,11 +268,9 @@ const CreateAccount: React.FC = () => {
                             disabled={!canCheck}
                             className="h-[38px] px-4 rounded-md text-sm font-medium bg-[#111111] text-white hover:bg-[#333333] active:scale-[0.98] disabled:opacity-40 disabled:cursor-not-allowed flex items-center gap-2 transition-all duration-200 whitespace-nowrap"
                             title={
-                                !isValidMstDisplay(form.maSoThue)
-                                    ? 'MST phải đủ 10 chữ số hoặc 10-3 (chi nhánh)'
-                                    : !isValidCccdLength(form.cmnD_CCCD)
-                                    ? 'CCCD/CMND phải đủ 9 hoặc 12 chữ số'
-                                    : 'Kiểm tra trạng thái MST trên bosConfigure'
+                                !canCheck
+                                    ? 'Nhập MST (10 số hoặc 10-3) HOẶC CCCD/CMND (9 hoặc 12 số) để kiểm tra'
+                                    : 'Kiểm tra trạng thái trên bosConfigure'
                             }
                         >
                             {checking ? (
@@ -402,7 +400,11 @@ const CreateAccount: React.FC = () => {
                     return (
                         <button
                             onClick={submitCreateAccount}
-                            disabled={submitting || !isValidMstDisplay(form.maSoThue) || !form.tenCongTy}
+                            disabled={
+                                submitting
+                                || (!isValidMstDisplay(form.maSoThue) && !CCCD_LENGTHS.includes(form.cmnD_CCCD.length))
+                                || !form.tenCongTy
+                            }
                             className="px-5 py-2.5 rounded-md text-sm font-medium bg-[#111111] text-white hover:bg-[#333333] active:scale-[0.98] disabled:opacity-40 disabled:cursor-not-allowed flex items-center gap-2 transition-all duration-200"
                         >
                             {submitting ? (

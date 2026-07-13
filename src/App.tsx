@@ -13,6 +13,8 @@ import AdminContracts from "./pages/admin/AdminContracts";
 import AdminLogs from "./pages/admin/AdminLogs";
 import AdminSalesTree from "./pages/admin/AdminSalesTree";
 import AdminExpiring from "./pages/admin/AdminExpiring";
+import AdminTvan from "./pages/admin/AdminTvan";
+import AdminReconcile from "./pages/admin/AdminReconcile";
 import RegisterAndPublish_NEW from "./pages/RegisterAndPublish_NEW";
 import Register from "./features/register/Register";
 import Publish from "./features/publish/Publish";
@@ -58,6 +60,8 @@ export default function App() {
               <Route path="contracts" element={<AdminContracts />} />
               <Route path="sales-tree" element={<AdminSalesTree />} />
               <Route path="expiring" element={<AdminExpiring />} />
+              <Route path="tvan" element={<AdminTvan />} />
+              <Route path="reconcile" element={<AdminReconcile />} />
               <Route path="create-account" element={<CreateAccount />} />
               <Route path="logs" element={<AdminLogs />} />
             </Route>
