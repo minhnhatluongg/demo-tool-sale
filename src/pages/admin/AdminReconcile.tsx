@@ -337,11 +337,13 @@ const AdminReconcile: React.FC = () => {
                                 </div>
                             ) : (
                                 <>
-                                    <div className="overflow-x-auto -mx-5">
-                                        <table className="w-full text-sm">
+                                    {/* Cột OID + checkbox ghim TRÁI, nút thao tác ghim PHẢI —
+                                        cuộn ngang vẫn luôn biết đang tick hợp đồng nào. */}
+                                    <div className="overflow-x-auto -mx-5 max-h-[65vh] overflow-y-auto">
+                                        <table className="min-w-full text-sm border-separate border-spacing-0">
                                             <thead>
-                                                <tr className="text-[11px] uppercase tracking-wide text-[#787774] border-b border-[#E4E7EC]">
-                                                    <th className="px-5 py-2">
+                                                <tr className="text-[11px] uppercase tracking-wide text-[#787774]">
+                                                    <th className="sticky top-0 left-0 z-30 bg-[#F7F8FA] border-b border-[#E4E7EC] w-12 px-4 py-2.5">
                                                         <input
                                                             type="checkbox"
                                                             checked={allFilteredSelected}
@@ -349,61 +351,81 @@ const AdminReconcile: React.FC = () => {
                                                             title={`Chọn tất cả ${rows.length} HĐ đang lọc`}
                                                         />
                                                     </th>
-                                                    <th className="text-left font-medium px-3 py-2">OID</th>
-                                                    <th className="text-left font-medium px-3 py-2">Sale</th>
-                                                    <th className="text-left font-medium px-3 py-2">Khách hàng</th>
-                                                    <th className="text-left font-medium px-3 py-2">MST</th>
-                                                    <th className="text-right font-medium px-3 py-2">Tổng tiền</th>
-                                                    <th className="text-left font-medium px-3 py-2">KT ký</th>
-                                                    <th className="text-left font-medium px-3 py-2">Khách ký</th>
-                                                    <th className="text-left font-medium px-3 py-2">Đối soát</th>
-                                                    <th className="text-right font-medium px-5 py-2">Thao tác</th>
+                                                    <th className="sticky top-0 left-12 z-30 bg-[#F7F8FA] border-b border-[#E4E7EC] shadow-[1px_0_0_0_#E4E7EC] text-left font-medium px-3 py-2.5 min-w-[195px] whitespace-nowrap">
+                                                        OID
+                                                    </th>
+                                                    <th className="sticky top-0 z-20 bg-[#F7F8FA] border-b border-[#E4E7EC] text-left font-medium px-3 py-2.5 min-w-[125px] whitespace-nowrap">Sale</th>
+                                                    <th className="sticky top-0 z-20 bg-[#F7F8FA] border-b border-[#E4E7EC] text-left font-medium px-3 py-2.5 min-w-[190px] whitespace-nowrap">Khách hàng</th>
+                                                    <th className="sticky top-0 z-20 bg-[#F7F8FA] border-b border-[#E4E7EC] text-left font-medium px-3 py-2.5 min-w-[105px] whitespace-nowrap">MST</th>
+                                                    <th className="sticky top-0 z-20 bg-[#F7F8FA] border-b border-[#E4E7EC] text-right font-medium px-3 py-2.5 min-w-[95px] whitespace-nowrap">Tổng tiền</th>
+                                                    <th className="sticky top-0 z-20 bg-[#F7F8FA] border-b border-[#E4E7EC] text-left font-medium px-3 py-2.5 min-w-[90px] whitespace-nowrap">KT ký</th>
+                                                    <th className="sticky top-0 z-20 bg-[#F7F8FA] border-b border-[#E4E7EC] text-left font-medium px-3 py-2.5 min-w-[90px] whitespace-nowrap">Khách ký</th>
+                                                    <th className="sticky top-0 z-20 bg-[#F7F8FA] border-b border-[#E4E7EC] text-left font-medium px-3 py-2.5 min-w-[105px] whitespace-nowrap">Đối soát</th>
+                                                    <th className="sticky top-0 right-0 z-30 bg-[#F7F8FA] border-b border-[#E4E7EC] shadow-[-1px_0_0_0_#E4E7EC] text-right font-medium px-4 py-2.5 min-w-[92px] whitespace-nowrap">
+                                                        Thao tác
+                                                    </th>
                                                 </tr>
                                             </thead>
                                             <tbody>
-                                                {pageRows.map(r => (
-                                                    <tr key={r.oid} className="border-b border-[#F1F0EC] hover:bg-[#FAFAF8]">
-                                                        <td className="px-5 py-2">
-                                                            <input
-                                                                type="checkbox"
-                                                                checked={selected.has(r.oid)}
-                                                                onChange={() => toggleRow(r.oid)}
-                                                            />
-                                                        </td>
-                                                        <td className="px-3 py-2 font-mono text-xs text-[#111111]">{r.oid}</td>
-                                                        <td className="px-3 py-2 whitespace-nowrap" title={r.saleEmID || ''}>
-                                                            {r.saleName || r.saleEmID || '—'}
-                                                        </td>
-                                                        <td className="px-3 py-2 max-w-[220px] truncate" title={r.cusName || ''}>{r.cusName}</td>
-                                                        <td className="px-3 py-2">{r.cusTax}</td>
-                                                        <td className="px-3 py-2 text-right">{fmtMoney(r.sum_Amnt)}</td>
-                                                        <td className="px-3 py-2">{fmtDate(r.ngayKeToanKy)}</td>
-                                                        <td className="px-3 py-2">{fmtDate(r.ngayKhachKy)}</td>
-                                                        <td className="px-3 py-2">
-                                                            {r.daDoiSoat ? (
-                                                                <Badge tone="success" className="cursor-help"
-                                                                    // hiển thị ai/ngày nào đã tích
-                                                                    // eslint-disable-next-line react/jsx-props-no-multi-spaces
-                                                                >
-                                                                    <span title={`${r.nguoiDoiSoat || ''} · ${fmtDateTime(r.ngayDoiSoat)}${r.ghiChuDoiSoat ? ` · ${r.ghiChuDoiSoat}` : ''}`}>
-                                                                        ✓ {fmtDate(r.ngayDoiSoat)}
-                                                                    </span>
-                                                                </Badge>
-                                                            ) : (
-                                                                <Badge tone="danger">Chưa</Badge>
-                                                            )}
-                                                        </td>
-                                                        <td className="px-5 py-2 text-right">
-                                                            <Button
-                                                                variant={r.daDoiSoat ? 'destructive' : 'success'}
-                                                                size="sm"
-                                                                onClick={() => quickToggle(r)}
+                                                {pageRows.map(r => {
+                                                    const isSel = selected.has(r.oid);
+                                                    // Ô ghim nằm đè lên ô khác nên phải tự set nền theo trạng thái dòng.
+                                                    const stickyBg = isSel ? 'bg-[#EAF0FA]' : 'bg-white group-hover:bg-[#FAFAF8]';
+                                                    const cell = 'border-b border-[#F1F0EC] px-3 py-2 whitespace-nowrap';
+                                                    return (
+                                                        <tr
+                                                            key={r.oid}
+                                                            onClick={() => toggleRow(r.oid)}
+                                                            className={`group cursor-pointer ${isSel ? 'bg-[#EAF0FA]' : 'hover:bg-[#FAFAF8]'}`}
+                                                        >
+                                                            <td className={`sticky left-0 z-10 ${stickyBg} border-b border-[#F1F0EC] px-4 py-2`}>
+                                                                <input
+                                                                    type="checkbox"
+                                                                    checked={isSel}
+                                                                    onChange={() => toggleRow(r.oid)}
+                                                                    onClick={e => e.stopPropagation()}
+                                                                />
+                                                            </td>
+                                                            <td className={`sticky left-12 z-10 ${stickyBg} shadow-[1px_0_0_0_#E4E7EC] ${cell} font-mono text-xs text-[#111111]`}>
+                                                                {r.oid}
+                                                            </td>
+                                                            <td className={`${cell} max-w-[140px] truncate`} title={r.saleEmID || ''}>
+                                                                {r.saleName || r.saleEmID || '—'}
+                                                            </td>
+                                                            <td className={`${cell} max-w-[210px] truncate`} title={r.cusName || ''}>{r.cusName}</td>
+                                                            <td className={cell}>{r.cusTax}</td>
+                                                            <td className={`${cell} text-right tabular-nums`}>{fmtMoney(r.sum_Amnt)}</td>
+                                                            <td className={cell}>{fmtDate(r.ngayKeToanKy)}</td>
+                                                            <td className={cell}>{fmtDate(r.ngayKhachKy)}</td>
+                                                            <td className={cell}>
+                                                                {r.daDoiSoat ? (
+                                                                    <Badge tone="success">
+                                                                        <span
+                                                                            className="cursor-help"
+                                                                            title={`${r.nguoiDoiSoat || ''} · ${fmtDateTime(r.ngayDoiSoat)}${r.ghiChuDoiSoat ? ` · ${r.ghiChuDoiSoat}` : ''}`}
+                                                                        >
+                                                                            ✓ {fmtDate(r.ngayDoiSoat)}
+                                                                        </span>
+                                                                    </Badge>
+                                                                ) : (
+                                                                    <Badge tone="danger">Chưa</Badge>
+                                                                )}
+                                                            </td>
+                                                            <td
+                                                                className={`sticky right-0 z-10 ${stickyBg} shadow-[-1px_0_0_0_#E4E7EC] border-b border-[#F1F0EC] px-4 py-2 text-right`}
+                                                                onClick={e => e.stopPropagation()}
                                                             >
-                                                                {r.daDoiSoat ? 'Gỡ tích' : 'Tích'}
-                                                            </Button>
-                                                        </td>
-                                                    </tr>
-                                                ))}
+                                                                <Button
+                                                                    variant={r.daDoiSoat ? 'destructive' : 'success'}
+                                                                    size="sm"
+                                                                    onClick={() => quickToggle(r)}
+                                                                >
+                                                                    {r.daDoiSoat ? 'Gỡ tích' : 'Tích'}
+                                                                </Button>
+                                                            </td>
+                                                        </tr>
+                                                    );
+                                                })}
                                             </tbody>
                                         </table>
                                     </div>
