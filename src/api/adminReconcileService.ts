@@ -7,6 +7,8 @@ export interface ReconcileMasterRow {
     oDate: string;
     crt_Date?: string | null;
     saleEmID?: string | null;
+    /** Tên Sale (bosUser.FullName theo UserCode) */
+    saleName?: string | null;
     cusName?: string | null;
     cusTax?: string | null;
     cusCMND_ID?: string | null;

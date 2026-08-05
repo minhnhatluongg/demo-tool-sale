@@ -52,6 +52,8 @@ const AdminTvan: React.FC = () => {
     const [packages, setPackages] = useState<TvanPackage[]>([]);
     const [selectedPkg, setSelectedPkg] = useState('');
     const [oid, setOid] = useState('');
+    // Số lượng = số lần nhân gói (gói 1 năm × qty = qty năm). Mặc định 1; chỉ dùng case đặc biệt.
+    const [renewQty, setRenewQty] = useState(1);
     const [confirmRenew, setConfirmRenew] = useState(false);
     const [renewing, setRenewing] = useState(false);
 
@@ -117,6 +119,7 @@ const AdminTvan: React.FC = () => {
                 mst: info.mst,
                 oid: oid.trim() || null,
                 packageItemId: currentPkg.itemID,
+                quantity: renewQty,
             });
             if (res.success && res.data) {
                 toast.success(
@@ -124,6 +127,7 @@ const AdminTvan: React.FC = () => {
                 );
                 if (res.data.infoSauGiaHan) setInfo(res.data.infoSauGiaHan);
                 setOid('');
+                setRenewQty(1);
             } else {
                 toast.error(res.message || 'Gia hạn thất bại.');
             }
@@ -279,14 +283,32 @@ const AdminTvan: React.FC = () => {
                                 )}
                                 {currentPkg && (
                                     <p className="text-xs text-[#787774]">
-                                        {currentPkg.itemName} · {fmtMoney(currentPkg.itemPrice)} ·{' '}
-                                        {currentPkg.soNgay.toLocaleString('vi-VN')} ngày — hạn mới ={' '}
+                                        {currentPkg.itemName} · {fmtMoney(currentPkg.itemPrice * renewQty)} ·{' '}
+                                        {(currentPkg.soNgay * renewQty).toLocaleString('vi-VN')} ngày
+                                        {renewQty > 1 &&
+                                            ` (${currentPkg.soNam} năm × ${renewQty} = ${currentPkg.soNam * renewQty} năm)`}
+                                        {' '}— hạn mới ={' '}
                                         <span className="font-medium text-[#111111]">
-                                            hôm nay + {currentPkg.soNgay.toLocaleString('vi-VN')} ngày
+                                            hôm nay + {(currentPkg.soNgay * renewQty).toLocaleString('vi-VN')} ngày
                                         </span>
                                     </p>
                                 )}
                                 <div className="flex gap-2 items-end">
+                                    <div className="w-28 shrink-0">
+                                        <Input
+                                            label="Số lượng"
+                                            type="number"
+                                            min={1}
+                                            max={40}
+                                            value={String(renewQty)}
+                                            onChange={e =>
+                                                setRenewQty(
+                                                    Math.max(1, Math.min(40, Number(e.target.value) || 1)),
+                                                )
+                                            }
+                                            hint="số năm (mặc định 1)"
+                                        />
+                                    </div>
                                     <Input
                                         label="OID hóa đơn đã ký (tùy chọn)"
                                         placeholder="Trống → ghi nhận NGOAI_HT"
@@ -383,9 +405,10 @@ const AdminTvan: React.FC = () => {
                 description={
                     currentPkg && info ? (
                         <span>
-                            Gia hạn <b>{currentPkg.soNam} năm</b> ({currentPkg.itemName}) cho MST <b>{info.mst}</b>.
+                            Gia hạn <b>{currentPkg.soNam * renewQty} năm</b> ({currentPkg.itemName}
+                            {renewQty > 1 ? ` × ${renewQty}` : ''}) cho MST <b>{info.mst}</b>.
                             <br />
-                            Hạn mới = hôm nay + {currentPkg.soNgay.toLocaleString('vi-VN')} ngày.
+                            Hạn mới = hôm nay + {(currentPkg.soNgay * renewQty).toLocaleString('vi-VN')} ngày.
                             {oid.trim() ? (
                                 <>
                                     <br />

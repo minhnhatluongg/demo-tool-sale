@@ -19,7 +19,7 @@ import {
     adminLogSearch,
 } from '../../api/adminService';
 
-type Category = 'econtract' | 'externalapi' | 'stdout';
+type Category = 'econtract' | 'externalapi' | 'partnerpayment' | 'stdout';
 type LevelFilter = 'all' | 'error' | 'warn' | 'info';
 
 // Khi user chọn "Tất cả" → gửi pageSize rất lớn để BE trả về toàn bộ trong 1 trang
@@ -274,7 +274,7 @@ const AdminLogs: React.FC = () => {
 
             {/* Category tabs — underline style */}
             <div className="flex gap-6 mb-5 border-b border-[#EAEAEA]">
-                {(['econtract', 'externalapi', 'stdout'] as Category[]).map(c => (
+                {(['econtract', 'externalapi', 'partnerpayment', 'stdout'] as Category[]).map(c => (
                     <button
                         key={c}
                         onClick={() => setCategory(c)}
