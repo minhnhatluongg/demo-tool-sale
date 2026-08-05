@@ -70,6 +70,8 @@ export const renewTvan = async (body: {
     mst: string;
     oid?: string | null;
     packageItemId: string;
+    /** Số lượng = số lần nhân gói (mặc định 1). VD gói 1 năm + quantity=4 → 4 năm. */
+    quantity?: number;
 }): Promise<ApiResponse<TvanRenewResult>> => {
     const res = await api.post('/admin/tvan/renew', body);
     return res.data;
