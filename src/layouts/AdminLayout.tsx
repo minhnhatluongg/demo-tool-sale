@@ -13,6 +13,8 @@ import {
     BuildingOffice2Icon,
     ArrowPathRoundedSquareIcon,
     ScaleIcon,
+    UserPlusIcon,
+    NoSymbolIcon,
 } from '@heroicons/react/24/outline';
 
 /*
@@ -36,7 +38,9 @@ const AdminLayout: React.FC = () => {
         { to: '/admin/expiring', label: 'Sắp hết hạn', icon: ExclamationTriangleIcon },
         { to: '/admin/tvan', label: 'Gia hạn / Hủy TVAN', icon: ArrowPathRoundedSquareIcon },
         { to: '/admin/reconcile', label: 'Đối soát bên thứ 3', icon: ScaleIcon },
+        { to: '/admin/sale-debt', label: 'Công nợ Sale', icon: NoSymbolIcon },
         { to: '/admin/sales-tree', label: 'Cây ASM', icon: UserGroupIcon },
+        { to: '/admin/create-employee', label: 'Tạo nhân viên', icon: UserPlusIcon },
         { to: '/admin/create-account', label: 'Cấp TK WinInvoice', icon: BuildingOffice2Icon },
         { to: '/admin/logs', label: 'Logs', icon: DocumentMagnifyingGlassIcon },
     ];

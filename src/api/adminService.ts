@@ -231,3 +231,33 @@ export const getCertExpire = async (params: {
     const res = await api.get('/RptUsed/cert-expire', { params });
     return res.data;
 };
+
+/* ─── Low-remaining Invoice (Số lượng hóa đơn sắp/đã hết) ──────────────── */
+
+export interface LowRemainingInvItem {
+    taxnumber?: string;
+    merchantName?: string;
+    sampleSign?: string;   // mẫu số
+    invcSign?: string;     // ký hiệu
+    invcTotal?: number;    // tổng số hóa đơn đã đăng ký
+    invcUsed?: number;     // đã dùng
+    invcRemain?: number;   // còn lại
+    tel1?: string;
+    tel2?: string;
+    tel3?: string;
+    email1?: string | null;
+    email2?: string | null;
+    email3?: string | null;
+    saleFullName?: string | null;
+    saleLoginName?: string | null;
+    [key: string]: any;
+}
+
+export const getLowRemainingInv = async (params: {
+    page?: number;
+    pageSize?: number;
+    searchKeyword?: string;
+}) => {
+    const res = await api.get('/RptUsed/low-remaining-inv', { params });
+    return res.data;
+};

@@ -11,12 +11,18 @@ import {
     ChevronRightIcon,
     ChevronDoubleLeftIcon,
     ChevronDoubleRightIcon,
+    DocumentTextIcon,
+    MagnifyingGlassCircleIcon,
+    BuildingOffice2Icon,
+    IdentificationIcon,
 } from '@heroicons/react/24/outline';
 import {
     getTvanExpiringSoon,
     getCertExpire,
+    getLowRemainingInv,
     TvanRenewalItem,
     CertExpireItem,
+    LowRemainingInvItem,
 } from '../../api/adminService';
 
 /* ─── Helpers ──────────────────────────────────────────────────────────── */
@@ -58,9 +64,27 @@ const daysTone = (d: number | null | undefined) => {
     return 'text-[#346538]';
 };
 
+/* ─── Số hóa đơn còn lại — tone theo mức cảnh báo ──────────────────────── */
+
+const invRemainTone = (remain?: number | null) => {
+    if (remain == null) return 'text-[#787774]';
+    if (remain <= 0) return 'text-[#9F2F2D]';
+    if (remain <= 50) return 'text-[#956400]';
+    return 'text-[#346538]';
+};
+
+/* ─── Cert days-left từ ngày hết hạn ────────────────────────────────────── */
+
+const certDaysLeft = (s?: string | null) => {
+    if (!s) return null;
+    const d = new Date(s);
+    if (isNaN(d.getTime())) return null;
+    return Math.ceil((d.getTime() - Date.now()) / (1000 * 60 * 60 * 24));
+};
+
 /* ─── Tab type ─────────────────────────────────────────────────────────── */
 
-type TabKey = 'tvan' | 'cert';
+type TabKey = 'tvan' | 'cert' | 'inv' | 'lookup';
 
 /* ─── Shared cell / header styles ──────────────────────────────────────── */
 
@@ -113,6 +137,22 @@ const AdminExpiring: React.FC = () => {
     const [certSize, setCertSize] = useState(20);
     const [certSearch, setCertSearch] = useState('');
     const [certLoading, setCertLoading] = useState(false);
+
+    /* ─── Số hóa đơn còn lại (low-remaining-inv) state ─── */
+    const [invRows, setInvRows] = useState<LowRemainingInvItem[]>([]);
+    const [invTotal, setInvTotal] = useState(0);
+    const [invPage, setInvPage] = useState(1);
+    const [invSize, setInvSize] = useState(20);
+    const [invSearch, setInvSearch] = useState('');
+    const [invLoading, setInvLoading] = useState(false);
+
+    /* ─── Tra cứu tổng quát theo MST state ─── */
+    const [lookupMst, setLookupMst] = useState('');
+    const [lookupLoading, setLookupLoading] = useState(false);
+    const [lookupDone, setLookupDone] = useState(false);
+    const [lookupTvan, setLookupTvan] = useState<TvanRenewalItem[]>([]);
+    const [lookupCert, setLookupCert] = useState<CertExpireItem[]>([]);
+    const [lookupInv, setLookupInv] = useState<LowRemainingInvItem[]>([]);
 
     /* ─── Column resize state ─── */
     const [customerNameWidth, setCustomerNameWidth] = useState(220);
@@ -206,6 +246,77 @@ const AdminExpiring: React.FC = () => {
         }
     };
 
+    /* ─── Số hóa đơn còn lại fetch ─── */
+    const fetchInv = async (p = invPage, s = invSize) => {
+        setInvLoading(true);
+        try {
+            const res = await getLowRemainingInv({
+                page: p,
+                pageSize: s,
+                searchKeyword: invSearch || undefined,
+            });
+            const payload = res?.data ?? res;
+            const items: LowRemainingInvItem[] = payload?.data ?? payload?.items ?? (Array.isArray(payload) ? payload : []);
+            const total: number = payload?.total ?? payload?.totalRecords ?? payload?.totalCount ?? items.length;
+            setInvRows(items);
+            setInvTotal(total);
+            setInvPage(p);
+            setInvSize(s);
+        } catch (e: any) {
+            toast.error(e?.response?.data?.message || e?.message || 'Lỗi tải số hóa đơn còn lại');
+            setInvRows([]);
+            setInvTotal(0);
+        } finally {
+            setInvLoading(false);
+        }
+    };
+
+    /* ─── Tra cứu tổng quát theo MST — gộp 3 nguồn ─── */
+    const runLookup = async (mstArg?: string) => {
+        const mst = (mstArg ?? lookupMst).trim();
+        if (!mst) {
+            toast.error('Nhập mã số thuế để tra cứu');
+            return;
+        }
+        setLookupLoading(true);
+        setLookupDone(false);
+        try {
+            const [tvanRes, certRes, invRes] = await Promise.allSettled([
+                getTvanExpiringSoon({ keyword: mst, daysBeforeExpiry: 3650, includeExpired: true, page: 1, size: 100 }),
+                getCertExpire({ searchKeyword: mst, page: 1, pageSize: 100 }),
+                getLowRemainingInv({ searchKeyword: mst, page: 1, pageSize: 100 }),
+            ]);
+
+            const pick = (r: PromiseSettledResult<any>, keysFirst: 'data' | 'items') => {
+                if (r.status !== 'fulfilled') return [];
+                const payload = r.value?.data ?? r.value;
+                const a = keysFirst === 'items'
+                    ? (payload?.items ?? payload?.data)
+                    : (payload?.data ?? payload?.items);
+                return a ?? (Array.isArray(payload) ? payload : []);
+            };
+
+            const tvan: TvanRenewalItem[] = pick(tvanRes, 'items');
+            const cert: CertExpireItem[] = pick(certRes, 'data');
+            const inv: LowRemainingInvItem[] = pick(invRes, 'data');
+
+            // Chỉ giữ đúng MST đã nhập (API là "search" nên có thể trả gần đúng)
+            const eq = (v?: string) => (v || '').replace(/\s/g, '') === mst.replace(/\s/g, '');
+            setLookupTvan(tvan.filter(x => eq(x.taxNumber) || eq(x.mst) || tvan.length <= 3));
+            setLookupCert(cert.filter(x => eq(x.taxnumber) || cert.length <= 3));
+            setLookupInv(inv.filter(x => eq(x.taxnumber) || inv.length <= 3));
+            setLookupDone(true);
+
+            if (!tvan.length && !cert.length && !inv.length) {
+                toast('Không có dữ liệu cảnh báo cho MST này (có thể vẫn còn hạn / đủ số).', { icon: 'ℹ️' });
+            }
+        } catch (e: any) {
+            toast.error(e?.response?.data?.message || e?.message || 'Lỗi tra cứu');
+        } finally {
+            setLookupLoading(false);
+        }
+    };
+
     useEffect(() => {
         fetchTvan(1);
         // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -215,11 +326,15 @@ const AdminExpiring: React.FC = () => {
         if (tab === 'cert' && certRows.length === 0 && !certLoading) {
             fetchCert(1);
         }
+        if (tab === 'inv' && invRows.length === 0 && !invLoading) {
+            fetchInv(1);
+        }
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [tab]);
 
     const tvanTotalPages = Math.max(1, Math.ceil(tvanTotal / tvanSize));
     const certTotalPages = Math.max(1, Math.ceil(certTotal / certSize));
+    const invTotalPages = Math.max(1, Math.ceil(invTotal / invSize));
 
     /* ─── Pagination helper ─── */
     const PaginationBar: React.FC<{
@@ -294,7 +409,7 @@ const AdminExpiring: React.FC = () => {
             <div className="pb-6 mb-6 border-b border-[#EAEAEA]">
                 <h1 className="text-2xl md:text-[28px] font-semibold tracking-tight text-[#111111]">Sắp hết hạn</h1>
                 <p className="text-sm text-[#787774] mt-1 max-w-[65ch]">
-                    Theo dõi hợp đồng TVAN và chứng thư số sắp hoặc đã hết hạn.
+                    Theo dõi hợp đồng TVAN, chứng thư số và số hóa đơn sắp/đã hết hạn — hoặc tra cứu tổng quát theo mã số thuế.
                 </p>
             </div>
 
@@ -321,6 +436,28 @@ const AdminExpiring: React.FC = () => {
                 >
                     <ShieldExclamationIcon className="w-4 h-4" />
                     Chứng thư số hết hạn
+                </button>
+                <button
+                    onClick={() => setTab('inv')}
+                    className={`pb-2.5 -mb-px text-sm flex items-center gap-2 border-b-2 transition-colors duration-200 ${
+                        tab === 'inv'
+                            ? 'border-[#111111] text-[#111111] font-medium'
+                            : 'border-transparent text-[#787774] hover:text-[#111111]'
+                    }`}
+                >
+                    <DocumentTextIcon className="w-4 h-4" />
+                    Số hóa đơn còn lại
+                </button>
+                <button
+                    onClick={() => setTab('lookup')}
+                    className={`pb-2.5 -mb-px text-sm flex items-center gap-2 border-b-2 transition-colors duration-200 ${
+                        tab === 'lookup'
+                            ? 'border-[#111111] text-[#111111] font-medium'
+                            : 'border-transparent text-[#787774] hover:text-[#111111]'
+                    }`}
+                >
+                    <MagnifyingGlassCircleIcon className="w-4 h-4" />
+                    Tra cứu tổng quát
                 </button>
             </div>
 
@@ -520,6 +657,272 @@ const AdminExpiring: React.FC = () => {
                         page={certPage} totalPages={certTotalPages} total={certTotal} pageSize={certSize} loading={certLoading}
                         onPageChange={p => fetchCert(p)} onSizeChange={s => fetchCert(1, s)}
                     />
+                </div>
+            )}
+
+            {/* ═══════════════ TAB: SỐ HÓA ĐƠN CÒN LẠI ═══════════════ */}
+            {tab === 'inv' && (
+                <div className="rounded-lg bg-white border border-[#EAEAEA] overflow-hidden">
+                    {/* Filters */}
+                    <div className="px-4 py-3 border-b border-[#EAEAEA] flex flex-wrap items-center gap-2 bg-[#FBFBFA]">
+                        <div className="relative flex-1 min-w-[200px] max-w-xs">
+                            <MagnifyingGlassIcon className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-[#787774]" />
+                            <input
+                                type="text" value={invSearch}
+                                onChange={e => setInvSearch(e.target.value)}
+                                onKeyDown={e => { if (e.key === 'Enter') fetchInv(1); }}
+                                placeholder="MST, tên công ty, sale"
+                                className="w-full pl-9 pr-3 py-2 rounded-md bg-white border border-[#EAEAEA] text-sm text-[#2F3437] placeholder:text-[#a8a6a1] focus:outline-none focus:border-[#111111] transition-colors duration-200"
+                            />
+                        </div>
+                        <button onClick={() => fetchInv(1)}
+                            className="px-4 py-2 rounded-md text-sm font-medium bg-[#111111] text-white hover:bg-[#333333] active:scale-[0.98] transition-all duration-200">
+                            Tìm
+                        </button>
+                        <button onClick={() => fetchInv(invPage)} aria-label="Tải lại"
+                            className="p-2 rounded-md bg-white border border-[#EAEAEA] text-[#787774] hover:text-[#111111] hover:bg-[#F7F6F3] transition-colors duration-200">
+                            <ArrowPathIcon className={`w-4 h-4 ${invLoading ? 'animate-spin' : ''}`} />
+                        </button>
+                    </div>
+
+                    {/* Table */}
+                    <div className="overflow-x-auto">
+                        <table className="min-w-full text-sm">
+                            <thead>
+                                <tr className="border-b border-[#EAEAEA]">
+                                    <th className={thCls}>MST</th>
+                                    <th className={thCls}>Công ty</th>
+                                    <th className={thCls}>Mẫu số</th>
+                                    <th className={thCls}>Ký hiệu</th>
+                                    <th className={`${thCls} text-right`}>Tổng số</th>
+                                    <th className={`${thCls} text-right`}>Đã dùng</th>
+                                    <th className={`${thCls} text-right`}>Còn lại</th>
+                                    <th className={thCls}>SĐT</th>
+                                    <th className={thCls}>Sale</th>
+                                </tr>
+                            </thead>
+                            <tbody className="divide-y divide-[#F1F0EC]">
+                                {invLoading && Array.from({ length: 6 }).map((_, i) => <SkeletonRow key={i} cols={9} />)}
+                                {!invLoading && invRows.length === 0 && <EmptyRow cols={9} />}
+                                {!invLoading && invRows.map((r, idx) => {
+                                    const phone = [r.tel1, r.tel2, r.tel3].filter(Boolean).join(', ') || '—';
+                                    return (
+                                        <tr key={(r.taxnumber || '') + (r.invcSign || '') + idx} className="hover:bg-[#FBFBFA] transition-colors duration-150">
+                                            <td className="px-3 py-2.5 font-mono text-xs text-[#2F3437] whitespace-nowrap" style={{ fontVariantNumeric: 'tabular-nums' }}>{r.taxnumber || '—'}</td>
+                                            <td className="px-3 py-2.5 max-w-[220px] truncate font-medium text-[#111111]" title={r.merchantName || ''}>{r.merchantName || '—'}</td>
+                                            <td className="px-3 py-2.5 text-[#5f5e5b] text-xs whitespace-nowrap">{r.sampleSign || '—'}</td>
+                                            <td className="px-3 py-2.5 text-[#5f5e5b] text-xs whitespace-nowrap">{r.invcSign || '—'}</td>
+                                            <td className="px-3 py-2.5 text-right text-[#5f5e5b]" style={{ fontVariantNumeric: 'tabular-nums' }}>{r.invcTotal != null ? r.invcTotal.toLocaleString('vi-VN') : '—'}</td>
+                                            <td className="px-3 py-2.5 text-right text-[#787774]" style={{ fontVariantNumeric: 'tabular-nums' }}>{r.invcUsed != null ? r.invcUsed.toLocaleString('vi-VN') : '—'}</td>
+                                            <td className="px-3 py-2.5 text-right">
+                                                <span className={`font-semibold ${invRemainTone(r.invcRemain)}`} style={{ fontVariantNumeric: 'tabular-nums' }}>
+                                                    {r.invcRemain != null ? r.invcRemain.toLocaleString('vi-VN') : '—'}
+                                                </span>
+                                            </td>
+                                            <td className="px-3 py-2.5 text-[#787774] text-xs whitespace-nowrap" style={{ fontVariantNumeric: 'tabular-nums' }}>{phone}</td>
+                                            <td className="px-3 py-2.5 text-[#5f5e5b] text-xs max-w-[140px] truncate" title={r.saleFullName || ''}>{r.saleFullName || r.saleLoginName || '—'}</td>
+                                        </tr>
+                                    );
+                                })}
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <PaginationBar
+                        page={invPage} totalPages={invTotalPages} total={invTotal} pageSize={invSize} loading={invLoading}
+                        onPageChange={p => fetchInv(p)} onSizeChange={s => fetchInv(1, s)}
+                    />
+                </div>
+            )}
+
+            {/* ═══════════════ TAB: TRA CỨU TỔNG QUÁT ═══════════════ */}
+            {tab === 'lookup' && (
+                <div className="space-y-5">
+                    {/* Ô nhập MST */}
+                    <div className="rounded-lg bg-white border border-[#EAEAEA] p-4">
+                        <label className="block text-xs font-medium uppercase tracking-[0.08em] text-[#787774] mb-2">
+                            Mã số thuế
+                        </label>
+                        <div className="flex flex-wrap items-center gap-2">
+                            <div className="relative flex-1 min-w-[240px] max-w-sm">
+                                <IdentificationIcon className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-[#787774]" />
+                                <input
+                                    type="text" value={lookupMst}
+                                    onChange={e => setLookupMst(e.target.value)}
+                                    onKeyDown={e => { if (e.key === 'Enter') runLookup(); }}
+                                    placeholder="Nhập MST để tra cứu…"
+                                    className="w-full pl-9 pr-3 py-2 rounded-md bg-white border border-[#EAEAEA] text-sm font-mono text-[#2F3437] placeholder:text-[#a8a6a1] placeholder:font-sans focus:outline-none focus:border-[#111111] transition-colors duration-200"
+                                    style={{ fontVariantNumeric: 'tabular-nums' }}
+                                />
+                            </div>
+                            <button onClick={() => runLookup()} disabled={lookupLoading}
+                                className="px-4 py-2 rounded-md text-sm font-medium bg-[#111111] text-white hover:bg-[#333333] active:scale-[0.98] disabled:opacity-40 transition-all duration-200 flex items-center gap-2">
+                                {lookupLoading
+                                    ? <ArrowPathIcon className="w-4 h-4 animate-spin" />
+                                    : <MagnifyingGlassCircleIcon className="w-4 h-4" />}
+                                Tra cứu
+                            </button>
+                        </div>
+                        <p className="text-xs text-[#a8a6a1] mt-2">
+                            Tổng hợp từ: chứng thư số, hợp đồng TVAN và số lượng hóa đơn còn lại của MST.
+                        </p>
+                    </div>
+
+                    {/* Trạng thái ban đầu */}
+                    {!lookupDone && !lookupLoading && (
+                        <div className="rounded-lg bg-white border border-[#EAEAEA] py-16">
+                            <div className="flex flex-col items-center gap-3 text-center">
+                                <div className="w-12 h-12 rounded-lg bg-[#F7F6F3] border border-[#EAEAEA] flex items-center justify-center">
+                                    <MagnifyingGlassCircleIcon className="w-6 h-6 text-[#a8a6a1]" />
+                                </div>
+                                <div>
+                                    <p className="text-sm font-medium text-[#2F3437]">Nhập mã số thuế để bắt đầu</p>
+                                    <p className="text-xs text-[#787774] mt-1">Kết quả sẽ tổng hợp chữ ký số, TVAN và hóa đơn.</p>
+                                </div>
+                            </div>
+                        </div>
+                    )}
+
+                    {/* Loading */}
+                    {lookupLoading && (
+                        <div className="rounded-lg bg-white border border-[#EAEAEA] py-16 flex items-center justify-center gap-2 text-[#787774] text-sm">
+                            <ArrowPathIcon className="w-4 h-4 animate-spin" /> Đang tra cứu…
+                        </div>
+                    )}
+
+                    {/* Kết quả */}
+                    {lookupDone && !lookupLoading && (() => {
+                        const company =
+                            lookupCert.find(c => c.merchantName)?.merchantName ||
+                            lookupInv.find(c => c.merchantName)?.merchantName ||
+                            lookupTvan.find(c => c.customerName)?.customerName ||
+                            lookupTvan.find(c => c.cusName)?.cusName ||
+                            '';
+                        const totalRemain = lookupInv.reduce((sum, r) => sum + (r.invcRemain ?? 0), 0);
+                        const hasData = lookupCert.length || lookupTvan.length || lookupInv.length;
+                        return (
+                            <>
+                                {/* Tên công ty */}
+                                {company && (
+                                    <div className="flex items-center gap-2 text-[#111111]">
+                                        <BuildingOffice2Icon className="w-5 h-5 text-[#787774]" />
+                                        <span className="text-lg font-semibold">{company}</span>
+                                        <span className="font-mono text-sm text-[#787774]" style={{ fontVariantNumeric: 'tabular-nums' }}>· {lookupMst.trim()}</span>
+                                    </div>
+                                )}
+
+                                {!hasData && (
+                                    <div className="rounded-lg bg-[#EDF3EC] border border-[#cfe3cf] px-4 py-3 text-sm text-[#346538]">
+                                        Không tìm thấy dữ liệu cảnh báo cho MST này — chứng thư số còn hạn, hợp đồng TVAN chưa tới hạn và số hóa đơn còn đủ.
+                                    </div>
+                                )}
+
+                                <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+                                    {/* Card: Chữ ký số */}
+                                    <div className="rounded-lg bg-white border border-[#EAEAEA] overflow-hidden">
+                                        <div className="px-4 py-3 border-b border-[#EAEAEA] bg-[#FBFBFA] flex items-center gap-2">
+                                            <ShieldExclamationIcon className="w-4 h-4 text-[#787774]" />
+                                            <span className="text-sm font-medium text-[#111111]">Chữ ký số</span>
+                                            <span className="ml-auto text-xs text-[#787774]">{lookupCert.length} CTS</span>
+                                        </div>
+                                        <div className="p-4 space-y-3">
+                                            {lookupCert.length === 0 && (
+                                                <p className="text-xs text-[#787774]">Không có chứng thư số sắp/đã hết hạn.</p>
+                                            )}
+                                            {lookupCert.map((c, i) => {
+                                                const dl = certDaysLeft(c.certNotAfterDate);
+                                                return (
+                                                    <div key={(c.certSerialNumber || '') + i} className="pb-3 border-b border-[#F1F0EC] last:border-0 last:pb-0">
+                                                        <div className="flex items-center gap-2 mb-1">
+                                                            <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-medium uppercase ${
+                                                                c.certSubjectName === 'WINCA' ? 'bg-[#E1F3FE] text-[#1F6C9F]' : 'bg-[#F1F0EC] text-[#5f5e5b]'
+                                                            }`}>
+                                                                <CheckBadgeIcon className="w-3 h-3" />{c.certSubjectName || 'CTS'}
+                                                            </span>
+                                                            {dl != null && (
+                                                                <span className={`text-xs font-semibold ${dl < 0 ? 'text-[#9F2F2D]' : dl <= 30 ? 'text-[#956400]' : 'text-[#346538]'}`}>
+                                                                    {dl < 0 ? `Đã hết hạn ${Math.abs(dl)} ngày` : `Còn ${dl} ngày`}
+                                                                </span>
+                                                            )}
+                                                        </div>
+                                                        <div className="text-xs text-[#787774] space-y-0.5">
+                                                            <div>Hết hạn: <span className="text-[#5f5e5b]">{fmtDate(c.certNotAfterDate)}</span></div>
+                                                            {c.certSerialNumber && <div className="font-mono truncate" title={c.certSerialNumber}>Serial: {c.certSerialNumber}</div>}
+                                                        </div>
+                                                    </div>
+                                                );
+                                            })}
+                                        </div>
+                                    </div>
+
+                                    {/* Card: HĐ TVAN */}
+                                    <div className="rounded-lg bg-white border border-[#EAEAEA] overflow-hidden">
+                                        <div className="px-4 py-3 border-b border-[#EAEAEA] bg-[#FBFBFA] flex items-center gap-2">
+                                            <ClockIcon className="w-4 h-4 text-[#787774]" />
+                                            <span className="text-sm font-medium text-[#111111]">Hợp đồng TVAN</span>
+                                            <span className="ml-auto text-xs text-[#787774]">{lookupTvan.length} HĐ</span>
+                                        </div>
+                                        <div className="p-4 space-y-3">
+                                            {lookupTvan.length === 0 && (
+                                                <p className="text-xs text-[#787774]">Không có hợp đồng TVAN sắp/đã hết hạn.</p>
+                                            )}
+                                            {lookupTvan.map((t, i) => (
+                                                <div key={(t.contractOID || t.oid || '') + i} className="pb-3 border-b border-[#F1F0EC] last:border-0 last:pb-0">
+                                                    <div className="flex items-center gap-2 mb-1">
+                                                        <span className={`inline-block px-2 py-0.5 rounded-full text-[10px] font-medium uppercase ${getRangeTone(t.rangeKey)}`}>
+                                                            {getRangeLabel(t.rangeKey)}
+                                                        </span>
+                                                        {t.daysRemaining != null && (
+                                                            <span className={`text-xs font-semibold ${daysTone(t.daysRemaining)}`} style={{ fontVariantNumeric: 'tabular-nums' }}>
+                                                                {t.daysRemaining < 0 ? `Quá ${Math.abs(t.daysRemaining)} ngày` : `Còn ${t.daysRemaining} ngày`}
+                                                            </span>
+                                                        )}
+                                                    </div>
+                                                    <div className="text-xs text-[#787774] space-y-0.5">
+                                                        <div>Hết hạn: <span className="text-[#5f5e5b]">{fmtDate(t.expiryDate)}</span></div>
+                                                        {(t.contractOID || t.oid) && <div className="font-mono truncate">Mã HĐ: {t.contractOID || t.oid}</div>}
+                                                    </div>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    </div>
+
+                                    {/* Card: Số hóa đơn */}
+                                    <div className="rounded-lg bg-white border border-[#EAEAEA] overflow-hidden">
+                                        <div className="px-4 py-3 border-b border-[#EAEAEA] bg-[#FBFBFA] flex items-center gap-2">
+                                            <DocumentTextIcon className="w-4 h-4 text-[#787774]" />
+                                            <span className="text-sm font-medium text-[#111111]">Số hóa đơn</span>
+                                            {lookupInv.length > 0 && (
+                                                <span className={`ml-auto text-xs font-semibold ${invRemainTone(totalRemain)}`} style={{ fontVariantNumeric: 'tabular-nums' }}>
+                                                    Còn {totalRemain.toLocaleString('vi-VN')}
+                                                </span>
+                                            )}
+                                        </div>
+                                        <div className="p-4 space-y-3">
+                                            {lookupInv.length === 0 && (
+                                                <p className="text-xs text-[#787774]">Không có dải hóa đơn sắp/đã hết.</p>
+                                            )}
+                                            {lookupInv.map((v, i) => (
+                                                <div key={(v.invcSign || '') + i} className="pb-3 border-b border-[#F1F0EC] last:border-0 last:pb-0">
+                                                    <div className="flex items-center justify-between mb-1">
+                                                        <span className="text-xs font-medium text-[#2F3437]">
+                                                            {[v.sampleSign, v.invcSign].filter(Boolean).join(' · ') || 'Dải hóa đơn'}
+                                                        </span>
+                                                        <span className={`text-xs font-semibold ${invRemainTone(v.invcRemain)}`} style={{ fontVariantNumeric: 'tabular-nums' }}>
+                                                            {v.invcRemain != null ? `còn ${v.invcRemain.toLocaleString('vi-VN')}` : '—'}
+                                                        </span>
+                                                    </div>
+                                                    <div className="text-xs text-[#787774]" style={{ fontVariantNumeric: 'tabular-nums' }}>
+                                                        Đã dùng {(v.invcUsed ?? 0).toLocaleString('vi-VN')} / {(v.invcTotal ?? 0).toLocaleString('vi-VN')}
+                                                    </div>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    </div>
+                                </div>
+                            </>
+                        );
+                    })()}
                 </div>
             )}
         </div>
