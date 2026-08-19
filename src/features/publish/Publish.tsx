@@ -33,6 +33,9 @@ const Publish: React.FC = () => {
         invoiceConfig,
         setInvoiceConfig,
         selectedSpecialInvoice,
+        invoiceTypes,
+        selectedFactorId,
+        setSelectedFactorId,
         handleSpecialInvoiceSelect,
         loadCompanyInfo,
         handleViewInvoice,
@@ -161,6 +164,9 @@ const Publish: React.FC = () => {
                                     selectedSpecialInvoice={selectedSpecialInvoice}
                                     onSpecialInvoiceSelect={handleSpecialInvoiceSelect}
                                     isToKhaiLocked={isToKhaiLocked}
+                                    invoiceTypes={invoiceTypes}
+                                    selectedFactorId={selectedFactorId}
+                                    onFactorIdChange={setSelectedFactorId}
                                 />
                             </div>
                         )}

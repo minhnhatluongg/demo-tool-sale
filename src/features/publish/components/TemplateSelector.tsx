@@ -22,6 +22,9 @@ interface TemplateSelectorProps {
     selectedSpecialInvoice: string;
     onSpecialInvoiceSelect: (type: string) => void;
     isToKhaiLocked: boolean;
+    invoiceTypes: { factorId: string; name: string }[];
+    selectedFactorId: string;
+    onFactorIdChange: (factorId: string) => void;
 }
 
 const TemplateSelector: React.FC<TemplateSelectorProps> = ({
@@ -34,6 +37,9 @@ const TemplateSelector: React.FC<TemplateSelectorProps> = ({
     selectedSpecialInvoice,
     onSpecialInvoiceSelect,
     isToKhaiLocked,
+    invoiceTypes,
+    selectedFactorId,
+    onFactorIdChange,
 }) => {
     const { isDark } = useTheme();
 
@@ -82,6 +88,34 @@ const TemplateSelector: React.FC<TemplateSelectorProps> = ({
                         ))}
                     </select>
                 )}
+
+                {/* Loại hóa đơn (FactorID) — quyết định loại hóa đơn hiển thị về sau */}
+                <div className="mt-4">
+                    <label className={`block text-sm font-medium mb-2 ${isDark ? 'text-gray-300' : 'text-gray-700'}`}>
+                        Loại hóa đơn <span className="text-red-500">*</span>
+                    </label>
+                    <select
+                        value={selectedFactorId}
+                        onChange={(e) => onFactorIdChange(e.target.value)}
+                        disabled={invoiceConfig.hdvcnb}
+                        className={`w-full border rounded-lg px-4 py-2.5 text-sm transition-colors ${isDark
+                            ? 'bg-slate-700 border-slate-600 text-white'
+                            : 'bg-white border-gray-300 text-gray-900'
+                            } focus:outline-none focus:ring-2 focus:ring-indigo-500/20 disabled:opacity-60`}
+                    >
+                        {invoiceTypes.length === 0 && (
+                            <option value="EXPOR_GOODSINVC">a. Hóa đơn GTGT + B. hàng</option>
+                        )}
+                        {invoiceTypes.map((t) => (
+                            <option key={t.factorId} value={t.factorId}>{t.name}</option>
+                        ))}
+                    </select>
+                    <p className={`mt-1.5 text-xs ${isDark ? 'text-gray-400' : 'text-gray-500'}`}>
+                        {invoiceConfig.hdvcnb
+                            ? '🔒 Đang bật "Hóa đơn VCNB" nên tự dùng loại VCNB.'
+                            : 'Quyết định loại hóa đơn hiển thị: GTGT, máy tính tiền, phiếu xuất kho, tem-vé, chứng từ TNCN...'}
+                    </p>
+                </div>
             </div>
 
             {/* Special Invoice Types */}

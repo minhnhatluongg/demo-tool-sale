@@ -55,6 +55,11 @@ export const usePublish = () => {
 
     const [selectedSpecialInvoice, setSelectedSpecialInvoice] = useState<string>("");
 
+    // Loại hóa đơn (FactorID) — quyết định loại hóa đơn hiển thị: GTGT, máy tính tiền, PXK, tem-vé, TNCN...
+    // Danh sách load động từ bosConfigure..bosFactors qua API.
+    const [invoiceTypes, setInvoiceTypes] = useState<{ factorId: string; name: string }[]>([]);
+    const [selectedFactorId, setSelectedFactorId] = useState<string>("EXPOR_GOODSINVC");
+
     const [isOwner, setIsOwner] = useState(true);
     const [ownerUserCode, setOwnerUserCode] = useState("");
 
@@ -95,6 +100,33 @@ export const usePublish = () => {
             },
         }));
     };
+
+    // Load danh sách loại hóa đơn (FactorID) từ bosFactors 1 lần khi mở trang.
+    useEffect(() => {
+        let cancelled = false;
+        (async () => {
+            try {
+                const res = await api.get("/InvoicePreview/invoice-types");
+                const list = (res.data || []).map((x: any) => ({
+                    factorId: x.factorId ?? x.FactorId,
+                    name: x.name ?? x.Name,
+                }));
+                if (!cancelled && list.length) setInvoiceTypes(list);
+            } catch {
+                // Không chặn flow nếu API danh mục lỗi — vẫn publish được với mặc định GTGT
+            }
+        })();
+        return () => {
+            cancelled = true;
+        };
+    }, []);
+
+    // Đồng bộ ngược: khi tick "Hóa đơn VCNB" ở nhóm loại đặc biệt thì chọn luôn FactorID VCNB cho tiện.
+    useEffect(() => {
+        if (invoiceConfig.hdvcnb) setSelectedFactorId("EXPOR_INVCVCNB");
+        else if (selectedFactorId === "EXPOR_INVCVCNB") setSelectedFactorId("EXPOR_GOODSINVC");
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [invoiceConfig.hdvcnb]);
 
     // Khi chọn mẫu (TemplateId) → đọc cấu hình ẩn/hiện + viền trực tiếp từ file mẫu để tick chính xác.
     useEffect(() => {
@@ -622,10 +654,11 @@ export const usePublish = () => {
 
         setLoading(true);
         try {
-            // Xác định factorId dựa trên loại hóa đơn
-            let factorId = "EXPOR_GOODSINVC"; // Mặc định: hóa đơn thường
+            // Loại hóa đơn do người dùng chọn ở dropdown (12 loại từ bosFactors).
+            // Nếu tick VCNB thì ưu tiên VCNB để khớp mẫu đặc biệt.
+            let factorId = selectedFactorId || "EXPOR_GOODSINVC";
             if (invoiceConfig.hdvcnb) {
-                factorId = "EXPOR_INVCVCNB"; // Hóa đơn VCNB
+                factorId = "EXPOR_INVCVCNB";
             }
 
             // 🔧 FIX: Luôn sử dụng 'NEW' cho sampleId (không còn chọn loại khách hàng)
@@ -790,6 +823,9 @@ export const usePublish = () => {
         invoiceConfig,
         setInvoiceConfig,
         selectedSpecialInvoice,
+        invoiceTypes,
+        selectedFactorId,
+        setSelectedFactorId,
         adjustConfig,
         setAdjustConfig,
         handleSpecialInvoiceSelect,
