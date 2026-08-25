@@ -77,6 +77,15 @@ export const createPendingEmail = async (
     return res.data;
 };
 
+/** Sửa 1 email loại trừ theo PID. */
+export const updatePendingEmail = async (
+    pid: number,
+    body: CreatePendingEmailBody
+): Promise<ApiResponse<null>> => {
+    const res = await api.put(`/pending-company-emails/${pid}`, body);
+    return res.data;
+};
+
 /** Xóa 1 email loại trừ theo PID. */
 export const deletePendingEmail = async (
     pid: number

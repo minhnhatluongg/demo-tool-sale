@@ -3,12 +3,15 @@ import toast from 'react-hot-toast';
 import {
     PlusIcon,
     TrashIcon,
+    PencilSquareIcon,
     MagnifyingGlassIcon,
     NoSymbolIcon,
+    XMarkIcon,
 } from '@heroicons/react/24/outline';
 import {
     getPendingEmails,
     createPendingEmail,
+    updatePendingEmail,
     deletePendingEmail,
     serviceTypeLabel,
     SERVICE_TYPE_OPTIONS,
@@ -47,6 +50,11 @@ const AdminPendingEmails: React.FC = () => {
 
     // Form thêm mới
     const [form, setForm] = useState({ ...emptyForm });
+
+    // Sửa (modal)
+    const [editing, setEditing] = useState<PendingEmail | null>(null);
+    const [editForm, setEditForm] = useState({ ...emptyForm });
+    const [editSaving, setEditSaving] = useState(false);
 
     const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
 
@@ -101,6 +109,43 @@ const AdminPendingEmails: React.FC = () => {
             );
         } finally {
             setSaving(false);
+        }
+    };
+
+    const openEdit = (row: PendingEmail) => {
+        setEditing(row);
+        setEditForm({
+            taxnumber: row.taxnumber,
+            email: row.email,
+            serviceType: row.serviceType,
+            partyCode: row.partyCode || '',
+            description: row.description || '',
+        });
+    };
+
+    const onUpdate = async () => {
+        if (!editing) return;
+        if (!editForm.taxnumber.trim()) return toast.error('Nhập Mã số thuế');
+        if (!editForm.email.trim()) return toast.error('Nhập Email');
+        if (!editForm.serviceType) return toast.error('Chọn loại dịch vụ');
+        setEditSaving(true);
+        try {
+            await updatePendingEmail(editing.pid, {
+                taxnumber: editForm.taxnumber.trim(),
+                email: editForm.email.trim(),
+                serviceType: editForm.serviceType,
+                partyCode: editForm.partyCode.trim() || undefined,
+                description: editForm.description.trim() || undefined,
+            });
+            toast.success('Đã cập nhật');
+            setEditing(null);
+            await load(page);
+        } catch (e: any) {
+            toast.error(
+                e?.response?.data?.message || e?.message || 'Cập nhật thất bại'
+            );
+        } finally {
+            setEditSaving(false);
         }
     };
 
@@ -259,7 +304,7 @@ const AdminPendingEmails: React.FC = () => {
                                 <th className="px-4 py-3">Dịch vụ</th>
                                 <th className="px-4 py-3">Mã KH</th>
                                 <th className="px-4 py-3">Ghi chú</th>
-                                <th className="px-4 py-3 text-center">Xóa</th>
+                                <th className="px-4 py-3 text-center">Thao tác</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -289,14 +334,23 @@ const AdminPendingEmails: React.FC = () => {
                                         <td className="px-4 py-3 text-[#5f5e5b] max-w-xs truncate" title={row.description || ''}>
                                             {row.description || '—'}
                                         </td>
-                                        <td className="px-4 py-3 text-center">
-                                            <button
-                                                className="inline-flex items-center justify-center w-8 h-8 rounded-md text-[#9F2F2D] hover:bg-[#FDEBEC] transition-colors"
-                                                title="Xóa"
-                                                onClick={() => onDelete(row)}
-                                            >
-                                                <TrashIcon className="w-4 h-4" />
-                                            </button>
+                                        <td className="px-4 py-3">
+                                            <div className="flex items-center justify-center gap-1">
+                                                <button
+                                                    className="inline-flex items-center justify-center w-8 h-8 rounded-md text-[#1F6C9F] hover:bg-[#E1F3FE] transition-colors"
+                                                    title="Sửa"
+                                                    onClick={() => openEdit(row)}
+                                                >
+                                                    <PencilSquareIcon className="w-4 h-4" />
+                                                </button>
+                                                <button
+                                                    className="inline-flex items-center justify-center w-8 h-8 rounded-md text-[#9F2F2D] hover:bg-[#FDEBEC] transition-colors"
+                                                    title="Xóa"
+                                                    onClick={() => onDelete(row)}
+                                                >
+                                                    <TrashIcon className="w-4 h-4" />
+                                                </button>
+                                            </div>
                                         </td>
                                     </tr>
                                 ))
@@ -328,6 +382,93 @@ const AdminPendingEmails: React.FC = () => {
                     </div>
                 </div>
             </div>
+
+            {/* Modal Sửa */}
+            {editing && (
+                <div
+                    className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 p-4"
+                    onClick={() => !editSaving && setEditing(null)}
+                >
+                    <div
+                        className="w-full max-w-lg bg-white rounded-lg border border-[#E4E7EC] shadow-xl"
+                        onClick={(e) => e.stopPropagation()}
+                    >
+                        <div className="flex items-center justify-between px-5 py-4 border-b border-[#E4E7EC]">
+                            <p className="text-sm font-semibold text-[#111111]">
+                                Sửa email loại trừ · PID {editing.pid}
+                            </p>
+                            <button
+                                className="text-[#787774] hover:text-[#111111]"
+                                onClick={() => !editSaving && setEditing(null)}
+                            >
+                                <XMarkIcon className="w-5 h-5" />
+                            </button>
+                        </div>
+                        <div className="px-5 py-4 space-y-3">
+                            <div>
+                                <label className="block text-xs text-[#787774] mb-1">Mã số thuế *</label>
+                                <input
+                                    className={inputCls}
+                                    value={editForm.taxnumber}
+                                    onChange={(e) => setEditForm({ ...editForm, taxnumber: e.target.value })}
+                                />
+                            </div>
+                            <div>
+                                <label className="block text-xs text-[#787774] mb-1">Email *</label>
+                                <input
+                                    className={inputCls}
+                                    value={editForm.email}
+                                    onChange={(e) => setEditForm({ ...editForm, email: e.target.value })}
+                                />
+                            </div>
+                            <div className="grid grid-cols-2 gap-3">
+                                <div>
+                                    <label className="block text-xs text-[#787774] mb-1">Loại dịch vụ *</label>
+                                    <select
+                                        className={selectCls}
+                                        value={editForm.serviceType}
+                                        onChange={(e) => setEditForm({ ...editForm, serviceType: e.target.value })}
+                                    >
+                                        {SERVICE_TYPE_OPTIONS.map((o) => (
+                                            <option key={o.value} value={o.value}>
+                                                {o.label}
+                                            </option>
+                                        ))}
+                                    </select>
+                                </div>
+                                <div>
+                                    <label className="block text-xs text-[#787774] mb-1">Mã KH (tùy chọn)</label>
+                                    <input
+                                        className={inputCls}
+                                        value={editForm.partyCode}
+                                        onChange={(e) => setEditForm({ ...editForm, partyCode: e.target.value })}
+                                    />
+                                </div>
+                            </div>
+                            <div>
+                                <label className="block text-xs text-[#787774] mb-1">Ghi chú (tùy chọn)</label>
+                                <input
+                                    className={inputCls}
+                                    value={editForm.description}
+                                    onChange={(e) => setEditForm({ ...editForm, description: e.target.value })}
+                                />
+                            </div>
+                        </div>
+                        <div className="flex justify-end gap-2 px-5 py-4 border-t border-[#E4E7EC]">
+                            <button
+                                className={btnLight}
+                                onClick={() => setEditing(null)}
+                                disabled={editSaving}
+                            >
+                                Hủy
+                            </button>
+                            <button className={btnDark} onClick={onUpdate} disabled={editSaving}>
+                                {editSaving ? 'Đang lưu…' : 'Lưu'}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 };
