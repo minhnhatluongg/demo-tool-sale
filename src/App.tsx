@@ -16,6 +16,7 @@ import AdminExpiring from "./pages/admin/AdminExpiring";
 import AdminTvan from "./pages/admin/AdminTvan";
 import AdminReconcile from "./pages/admin/AdminReconcile";
 import AdminSaleDebt from "./pages/admin/AdminSaleDebt";
+import AdminPendingEmails from "./pages/admin/AdminPendingEmails";
 import AdminCreateEmployee from "./pages/admin/AdminCreateEmployee";
 import RegisterAndPublish_NEW from "./pages/RegisterAndPublish_NEW";
 import Register from "./features/register/Register";
@@ -62,6 +63,7 @@ export default function App() {
               <Route path="contracts" element={<AdminContracts />} />
               <Route path="sales-tree" element={<AdminSalesTree />} />
               <Route path="expiring" element={<AdminExpiring />} />
+              <Route path="pending-emails" element={<AdminPendingEmails />} />
               <Route path="tvan" element={<AdminTvan />} />
               <Route path="reconcile" element={<AdminReconcile />} />
               <Route path="sale-debt" element={<AdminSaleDebt />} />

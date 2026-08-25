@@ -15,6 +15,7 @@ import {
     ScaleIcon,
     UserPlusIcon,
     NoSymbolIcon,
+    BellSlashIcon,
 } from '@heroicons/react/24/outline';
 
 /*
@@ -36,6 +37,7 @@ const AdminLayout: React.FC = () => {
         { to: '/admin/dashboard', label: 'Dashboard', icon: Squares2X2Icon },
         { to: '/admin/contracts', label: 'Hợp đồng', icon: DocumentTextIcon },
         { to: '/admin/expiring', label: 'Sắp hết hạn', icon: ExclamationTriangleIcon },
+        { to: '/admin/pending-emails', label: 'Email loại trừ cảnh báo', icon: BellSlashIcon },
         { to: '/admin/tvan', label: 'Gia hạn / Hủy TVAN', icon: ArrowPathRoundedSquareIcon },
         { to: '/admin/reconcile', label: 'Đối soát bên thứ 3', icon: ScaleIcon },
         { to: '/admin/sale-debt', label: 'Công nợ Sale', icon: NoSymbolIcon },
