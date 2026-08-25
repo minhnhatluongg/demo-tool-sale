@@ -2,6 +2,7 @@ import React from 'react';
 import { NavLink, Outlet, useNavigate, useLocation } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { useAuth } from '../contexts/AuthContext';
+import { isAdmin } from '../utils/admin';
 import {
     Squares2X2Icon,
     DocumentTextIcon,
@@ -33,11 +34,16 @@ const AdminLayout: React.FC = () => {
         navigate('/login');
     };
 
-    const navItems = [
+    const navItems: {
+        to: string;
+        label: string;
+        icon: React.ComponentType<any>;
+        adminOnly?: boolean;
+    }[] = [
         { to: '/admin/dashboard', label: 'Dashboard', icon: Squares2X2Icon },
         { to: '/admin/contracts', label: 'Hợp đồng', icon: DocumentTextIcon },
         { to: '/admin/expiring', label: 'Sắp hết hạn', icon: ExclamationTriangleIcon },
-        { to: '/admin/pending-emails', label: 'Email loại trừ cảnh báo', icon: BellSlashIcon },
+        { to: '/admin/pending-emails', label: 'Email loại trừ cảnh báo', icon: BellSlashIcon, adminOnly: true },
         { to: '/admin/tvan', label: 'Gia hạn / Hủy TVAN', icon: ArrowPathRoundedSquareIcon },
         { to: '/admin/reconcile', label: 'Đối soát bên thứ 3', icon: ScaleIcon },
         { to: '/admin/sale-debt', label: 'Công nợ Sale', icon: NoSymbolIcon },
@@ -57,7 +63,7 @@ const AdminLayout: React.FC = () => {
                 </div>
 
                 <nav className="px-3 py-4 flex-1 space-y-0.5">
-                    {navItems.map(item => {
+                    {navItems.filter(item => !item.adminOnly || isAdmin(user)).map(item => {
                         const Icon = item.icon;
                         const isActive = location.pathname.startsWith(item.to);
                         return (

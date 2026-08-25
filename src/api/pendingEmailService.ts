@@ -2,8 +2,9 @@ import api from './apiClient';
 
 /*
  * Email LOẠI TRỪ khỏi cảnh báo hết hạn dịch vụ
- * (bảng [BosEVAT].[dbo].[RPT_PendingCompnyEmail], API api/pending-company-emails).
- * Sale thêm/xóa email không muốn nhận cảnh báo, theo từng loại dịch vụ hoặc tất cả.
+ * (bảng [BosEVAT].[dbo].[RPT_PendingCompnyEmail], API api/admin/pending-company-emails).
+ * CHỈ ADMIN (JWT + Admin:AllowedUserCodes / AdminAuthFilter) — thêm/sửa/xóa email
+ * không muốn nhận cảnh báo, theo từng loại dịch vụ hoặc tất cả.
  */
 
 export interface ApiResponse<T> {
@@ -57,7 +58,7 @@ export const getPendingEmails = async (params: {
     page?: number;
     pageSize?: number;
 }): Promise<ApiResponse<PendingEmail[]>> => {
-    const res = await api.get('/pending-company-emails', {
+    const res = await api.get('/admin/pending-company-emails', {
         params: {
             taxnumber: params.taxnumber?.trim() || undefined,
             email: params.email?.trim() || undefined,
@@ -73,7 +74,7 @@ export const getPendingEmails = async (params: {
 export const createPendingEmail = async (
     body: CreatePendingEmailBody
 ): Promise<ApiResponse<{ pid: number }>> => {
-    const res = await api.post('/pending-company-emails', body);
+    const res = await api.post('/admin/pending-company-emails', body);
     return res.data;
 };
 
@@ -82,7 +83,7 @@ export const updatePendingEmail = async (
     pid: number,
     body: CreatePendingEmailBody
 ): Promise<ApiResponse<null>> => {
-    const res = await api.put(`/pending-company-emails/${pid}`, body);
+    const res = await api.put(`/admin/pending-company-emails/${pid}`, body);
     return res.data;
 };
 
@@ -90,6 +91,6 @@ export const updatePendingEmail = async (
 export const deletePendingEmail = async (
     pid: number
 ): Promise<ApiResponse<null>> => {
-    const res = await api.delete(`/pending-company-emails/${pid}`);
+    const res = await api.delete(`/admin/pending-company-emails/${pid}`);
     return res.data;
 };

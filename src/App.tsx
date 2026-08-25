@@ -4,6 +4,7 @@ import { Toaster } from "react-hot-toast";
 import { AuthProvider } from "./contexts/AuthContext";
 import { ThemeProvider } from "./contexts/ThemeContext";
 import ProtectedRoute from "./components/ProtectedRoute";
+import AdminProtectedRoute from "./components/AdminProtectedRoute";
 import Login from "./pages/Login";
 import Dashboard from "./pages/Dashboard";
 import DashboardLayout from "./layouts/DashboardLayout";
@@ -63,7 +64,14 @@ export default function App() {
               <Route path="contracts" element={<AdminContracts />} />
               <Route path="sales-tree" element={<AdminSalesTree />} />
               <Route path="expiring" element={<AdminExpiring />} />
-              <Route path="pending-emails" element={<AdminPendingEmails />} />
+              <Route
+                path="pending-emails"
+                element={
+                  <AdminProtectedRoute>
+                    <AdminPendingEmails />
+                  </AdminProtectedRoute>
+                }
+              />
               <Route path="tvan" element={<AdminTvan />} />
               <Route path="reconcile" element={<AdminReconcile />} />
               <Route path="sale-debt" element={<AdminSaleDebt />} />
