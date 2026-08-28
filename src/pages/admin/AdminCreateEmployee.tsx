@@ -13,6 +13,7 @@ import { Button } from '../../components/ui/button';
 import { Card, CardHeader, CardTitle, CardContent } from '../../components/ui/card';
 import { Input } from '../../components/ui/input';
 import { Badge } from '../../components/ui/badge';
+import { SearchableSelect } from '../../components/ui/searchable-select';
 
 import {
     getHrCatalogs,
@@ -386,13 +387,15 @@ const AdminCreateEmployee: React.FC = () => {
 
                             <div>
                                 <label className={labelCls}>Chức danh (PsID)</label>
-                                <select className={selectCls} value={psID} onChange={e => setPsID(e.target.value)}>
-                                    {(catalogs?.positions || []).map(p => (
-                                        <option key={p.code} value={p.code}>
-                                            {p.code} · {p.name}
-                                        </option>
-                                    ))}
-                                </select>
+                                <SearchableSelect
+                                    value={psID}
+                                    onChange={setPsID}
+                                    placeholder="Tìm/chọn chức danh…"
+                                    options={(catalogs?.positions || []).map(p => ({
+                                        value: p.code,
+                                        label: `${p.code} · ${p.name}`,
+                                    }))}
+                                />
                             </div>
 
                             <div>
