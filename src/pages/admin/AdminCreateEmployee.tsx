@@ -421,20 +421,16 @@ const AdminCreateEmployee: React.FC = () => {
                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                 <div>
                                     <label className={labelCls}>Sếp trực tiếp {asmLevel !== 'MNG' && '*'}</label>
-                                    <select
-                                        className={selectCls}
+                                    <SearchableSelect
                                         value={managerEmplID}
-                                        onChange={e => setManagerEmplID(e.target.value)}
+                                        onChange={setManagerEmplID}
                                         disabled={asmLevel === 'MNG'}
-                                    >
-                                        <option value="">— Chọn sếp —</option>
-                                        {managers.map(m => (
-                                            <option key={m.id} value={m.id}>
-                                                {' '.repeat(m.indent * 3)}
-                                                {m.name}
-                                            </option>
-                                        ))}
-                                    </select>
+                                        placeholder="Tìm/chọn sếp theo tên…"
+                                        options={managers.map(m => ({
+                                            value: m.id,
+                                            label: m.name,
+                                        }))}
+                                    />
                                     {selectedManager && (
                                         <p className="mt-1 text-[11px] text-[#787774]">
                                             Cấp của sếp: <b>{selectedManager.levelVal}</b> (độ sâu {selectedManager.depth})
