@@ -23,7 +23,8 @@ import {
 } from '@heroicons/react/24/outline';
 import {
     adminListPaged,
-    adminGetSummary,
+    econtractGetDetails,
+    econtractPreviewHtml,
     adminBypassCapTk,
     adminBypassPhatHanh,
     adminBypassXuatHoaDon,
@@ -90,29 +91,30 @@ const ttFields: TtConfig[] = [
 ];
 
 const ProcessStatusBadges: React.FC<{ row: AdminListedContract }> = ({ row }) => {
+    // Lưới CỐ ĐỊNH 4 cột → mọi dòng thẳng hàng nhau, thấy trọn pipeline.
+    // 3 trạng thái: hoàn thành (xanh) · đang chờ (vàng) · chưa tới (xám, gạch mờ).
     return (
-        <div className="flex flex-wrap gap-1">
+        <div className="grid grid-cols-4 gap-1 min-w-[300px]">
             {ttFields.map(({ key, label }) => {
                 const val = getFieldNullable(row, key);
-                // null hoặc undefined = chưa có / bỏ qua → ẩn
-                if (val === undefined || val === null) return null;
-                // Chuỗi rỗng "" = đã hoàn thành
+                const missing = val === undefined || val === null;
                 const isDone = val === '';
-                // Chuỗi có nội dung = chưa xong (nội dung mô tả)
+                const tone = missing
+                    ? 'bg-[#F6F5F2] text-[#b4b2ad] border border-dashed border-[#E4E2DD]'
+                    : isDone
+                        ? 'bg-[#EDF3EC] text-[#346538]'
+                        : 'bg-[#FBF3DB] text-[#956400]';
                 return (
                     <span
                         key={key}
-                        title={isDone ? `${label}: Hoàn thành` : val}
-                        className={`inline-flex items-center gap-1 px-1.5 py-0.5 text-[10px] font-medium rounded whitespace-nowrap ${
-                            isDone
-                                ? 'bg-[#EDF3EC] text-[#346538]'
-                                : 'bg-[#FBF3DB] text-[#956400]'
-                        }`}
+                        title={missing ? `${label}: chưa tới` : isDone ? `${label}: Hoàn thành` : String(val)}
+                        className={`inline-flex items-center gap-1 px-1.5 py-0.5 text-[10px] font-medium rounded whitespace-nowrap ${tone}`}
                     >
-                        {isDone
-                            ? <CheckCircleIcon className="w-3 h-3" />
-                            : <ClockIcon className="w-3 h-3" />
-                        }
+                        {missing
+                            ? <span className="w-3 h-3 inline-flex items-center justify-center leading-none">–</span>
+                            : isDone
+                                ? <CheckCircleIcon className="w-3 h-3" />
+                                : <ClockIcon className="w-3 h-3" />}
                         {label}
                     </span>
                 );
@@ -226,6 +228,8 @@ const AdminContracts: React.FC = () => {
 
     /* ─── Summary modal state ──────────────────────────────────────────── */
     const [summaryModal, setSummaryModal] = useState<{ oid: string; data: any; loading: boolean } | null>(null);
+    /* ─── Preview (mở tab HTML hợp đồng) ────────────────────────────────── */
+    const [previewingOid, setPreviewingOid] = useState<string | null>(null);
 
     const yearAgo = useMemo(() => {
         const d = new Date();
@@ -402,7 +406,8 @@ const AdminContracts: React.FC = () => {
     const openSummary = async (oid: string) => {
         setSummaryModal({ oid, data: null, loading: true });
         try {
-            const res = await adminGetSummary(oid);
+            // Chi tiết HĐ lấy thẳng ERP RC /Econtract/get-details (không qua LOT).
+            const res = await econtractGetDetails(oid);
             const payload = res?.data ?? res;
             setSummaryModal({ oid, data: payload, loading: false });
         } catch (e: any) {
@@ -411,10 +416,41 @@ const AdminContracts: React.FC = () => {
         }
     };
 
+    /* ─── Xem preview hợp đồng (HTML render) → mở tab mới ──────────────────
+     * Mở tab TRỐNG ngay trong click (tránh popup blocker), rồi ghi HTML sau khi
+     * fetch xong. Nguồn: ERP RC /Econtract/lot-preview → LOT (X-Internal-Key). */
+    const handlePreview = async (oid: string, currSignNumb?: number) => {
+        if (!oid || previewingOid) return;
+        setPreviewingOid(oid);
+        const tab = window.open('', '_blank');
+        if (tab) {
+            tab.document.write(
+                '<!doctype html><meta charset="utf-8"><title>Đang tải hợp đồng…</title>' +
+                '<div style="font-family:system-ui;padding:40px;color:#555">Đang tải bản xem trước hợp đồng…</div>',
+            );
+        }
+        try {
+            const html = await econtractPreviewHtml(oid, 'original', currSignNumb ?? 0);
+            if (tab) {
+                tab.document.open();
+                tab.document.write(html);
+                tab.document.close();
+            } else {
+                toast.error('Trình duyệt chặn popup — hãy cho phép popup để xem hợp đồng.');
+            }
+        } catch (e: any) {
+            tab?.close();
+            toast.error(e?.response?.data?.message || e?.message || 'Không xem được hợp đồng');
+        } finally {
+            setPreviewingOid(null);
+        }
+    };
+
     const totalPages = Math.max(1, Math.ceil(total / pageSize));
 
     /* Row actions cho dropdown menu */
     const rowMenuActions = (oid: string) => [
+        { key: 'detail',     label: 'Chi tiết SP / dữ liệu', icon: InformationCircleIcon, onClick: () => openSummary(oid) },
         { key: 'captk',      label: 'Bypass Cấp TK',      icon: BoltIcon,            onClick: () => handleAction(oid, 'captk') },
         { key: 'phatHanh',   label: 'Phát hành HĐ',       icon: PaperAirplaneIcon,   onClick: () => handleAction(oid, 'phatHanh') },
         { key: 'xuatHD',     label: 'Xuất HĐĐT',          icon: DocumentArrowUpIcon, onClick: () => handleAction(oid, 'xuatHD') },
@@ -524,13 +560,17 @@ const AdminContracts: React.FC = () => {
                                         <td className="px-3 py-2.5 text-center"><StatusBadge code={sign} /></td>
                                         <td className="px-3 py-2.5"><ProcessStatusBadges row={r} /></td>
                                         <td className="px-3 py-2.5">
-                                            <div className="flex items-center justify-end gap-1">
+                                            <div className="flex items-center justify-end gap-1.5">
                                                 <button
-                                                    title="Chi tiết"
-                                                    onClick={() => openSummary(oid)}
-                                                    className="w-7 h-7 rounded-md text-[#787774] hover:text-[#111111] hover:bg-[#F1F0EC] flex items-center justify-center transition-colors duration-150 focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#111111]"
+                                                    title="Xem hợp đồng (bản in)"
+                                                    disabled={previewingOid === oid}
+                                                    onClick={() => handlePreview(oid, sign)}
+                                                    className="inline-flex items-center gap-1 h-7 px-2.5 rounded-md text-xs font-medium text-[#2F3437] bg-white border border-[#EAEAEA] hover:border-[#111111] hover:text-[#111111] disabled:opacity-40 transition-colors duration-150 whitespace-nowrap focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#111111]"
                                                 >
-                                                    <InformationCircleIcon className="w-4 h-4" />
+                                                    {previewingOid === oid
+                                                        ? <ArrowPathIcon className="w-3.5 h-3.5 animate-spin" />
+                                                        : <InformationCircleIcon className="w-3.5 h-3.5" />}
+                                                    Xem HĐ
                                                 </button>
                                                 <button
                                                     title="Trình ký"

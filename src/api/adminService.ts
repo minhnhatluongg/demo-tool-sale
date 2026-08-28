@@ -80,6 +80,35 @@ export const adminGetSummary = async (oid: string) => {
     return res.data;
 };
 
+/**
+ * Chi tiết hợp đồng (sản phẩm / gói yêu cầu tạo mẫu) — gọi THẲNG ERP RC
+ * `/api/Econtract/get-details/{oid}` bằng JWT sẵn có của admin console.
+ * (LOT `/sales/econtracts/get-details` chỉ proxy tới đúng endpoint này → khỏi
+ * qua LOT, khỏi CORS, khỏi login LOT.)
+ */
+export const econtractGetDetails = async (oid: string) => {
+    const encoded = encodeURIComponent(oid);
+    const res = await api.get(`/Econtract/get-details/${encoded}`);
+    return res.data;
+};
+
+/**
+ * PREVIEW hợp đồng (HTML văn bản đã render) — gọi ERP RC `/Econtract/lot-preview`,
+ * ERP RC server-side gọi LOT `/sales/econtracts/tool/preview` bằng X-Internal-Key
+ * (KHÔNG cần login LOT, key không lộ ra FE). Trả HTML thô để mở tab preview.
+ */
+export const econtractPreviewHtml = async (
+    oid: string,
+    type: string = 'original',
+    currSignNumb: number = 0,
+): Promise<string> => {
+    const res = await api.get('/Econtract/lot-preview', {
+        params: { oid, type, currSignNumb },
+        responseType: 'text',
+    });
+    return typeof res.data === 'string' ? res.data : String(res.data);
+};
+
 /* ─── Trình ký (Propose Sign) ────────────────────────────────────────────── */
 
 export const econtractProposeSign = async (oid: string) => {
